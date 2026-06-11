@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "CalTrack Data Contract",
+  "version": "1.0.0",
+  "$defs": {
+    "ObjectId": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{24}$",
+      "description": "MongoDB ObjectId (24-char hex string)"
+    },
+
+    "User": {
+      "type": "object",
+      "title": "User",
+      "description": "Registered user account",
+      "required": ["name", "email", "password"],
+      "properties": {
+        "_id":      { "$ref": "#/$defs/ObjectId" },
+        "name":     { "type": "string", "example": "Naman" },
+        "email":    { "type": "string", "format": "email", "example": "naman@mail.com" },
+        "password": { "type": "string", "description": "Hashed password" },
+        "__v":      { "type": "integer" }
+      },
+      "additionalProperties": false
+    },
+
+    "FoodItem": {
+      "type": "object",
+      "title": "FoodItem",
+      "description": "Nutritional data for a single food item",
+      "required": ["name", "category", "calories", "protein", "fats", "carbs", "fibre"],
+      "properties": {
+        "_id":      { "$ref": "#/$defs/ObjectId" },
+        "name":     { "type": "string", "example": "Poha" },
+        "category": {
+          "type": "string",
+          "enum": ["Breakfast", "Lunch", "Dinner", "Snack"],
+          "example": "Breakfast"
+        },
+        "calories": { "type": "number", "minimum": 0, "example": 290 },
+        "protein":  { "type": "number", "minimum": 0, "example": 7 },
+        "fats":     { "type": "number", "minimum": 0, "example": 6 },
+        "carbs":    { "type": "number", "minimum": 0, "example": 52 },
+        "fibre":    { "type": "number", "minimum": 0, "example": 4 },
+        "__v":      { "type": "integer" }
+      },
+      "additionalProperties": false
+    },
+
+    "MealItem": {
+      "type": "object",
+      "title": "MealItem",
+      "description": "A food item entry within a meal, with quantity",
+      "required": ["item", "quantity"],
+      "properties": {
+        "item":     { "$ref": "#/$defs/ObjectId", "description": "Ref to FoodItem._id" },
+        "quantity": { "type": "number", "minimum": 0.1, "example": 1 }
+      },
+      "additionalProperties": false
+    },
+
+    "NutritionTotals": {
+      "type": "object",
+      "title": "NutritionTotals",
+      "description": "Pre-computed nutrition sum for the meal",
+      "properties": {
+        "calories": { "type": "number", "minimum": 0, "example": 670 },
+        "protein":  { "type": "number", "minimum": 0, "example": 15 },
+        "fats":     { "type": "number", "minimum": 0, "example": 23 },
+        "carbs":    { "type": "number", "minimum": 0, "example": 100 },
+        "fibre":    { "type": "number", "minimum": 0, "example": 8 }
+      },
+      "additionalProperties": false
+    },
+
+    "UserMeal": {
+      "type": "object",
+      "title": "UserMeal",
+      "description": "A logged meal for a user on a given date",
+      "required": ["user", "name", "mealItems", "mealtype"],
+      "properties": {
+        "_id":      { "$ref": "#/$defs/ObjectId" },
+        "user":     { "$ref": "#/$defs/ObjectId", "description": "Ref to User._id" },
+        "name":     { "type": "string", "example": "Morning Meal" },
+        "mealItems": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/MealItem" }
+        },
+        "totals":   { "$ref": "#/$defs/NutritionTotals" },
+        "mealtype": {
+          "type": "string",
+          "enum": ["breakfast", "lunch", "dinner", "snack"],
+          "example": "breakfast"
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-06-10T08:00:00.000Z"
+        },
+        "__v": { "type": "integer" }
+      },
+      "additionalProperties": false
+    }
+  },
+
+  "examples": {
+    "FoodItem": {
+      "_id": "6a282c15c60898c169d65071",
+      "name": "Poha",
+      "category": "Breakfast",
+      "calories": 290,
+      "protein": 7,
+      "fats": 6,
+      "carbs": 52,
+      "fibre": 4
+    },
+    "UserMeal": {
+      "_id": "6a282c15c60898c169d65099",
+      "user": "665f1a2b3c4d5e6f7a8b9c0d",
+      "name": "Morning Meal",
+      "mealItems": [
+        { "item": "6a282c15c60898c169d65071", "quantity": 1 },
+        { "item": "6a282c15c60898c169d65073", "quantity": 1 }
+      ],
+      "totals": {
+        "calories": 670,
+        "protein": 15,
+        "fats": 23,
+        "carbs": 100,
+        "fibre": 8
+      },
+      "mealtype": "breakfast",
+      "date": "2026-06-10T08:00:00.000Z"
+    }
+  }
+}
