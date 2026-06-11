@@ -24,14 +24,23 @@ app.get("/home", (req, res) => {
 })
 
 app.post("/home", async (req, res) => {
-    let { fooditem, quantity } = await req.body;
-    let foodid = await foodModel.findOne({ name: fooditem }).select("_id");
-    console.log(fooditem);
-    console.log(foodid);
-    // console.log(quantity);
-    // console.log(req.body);
+    let { fooditem, quantity } = req.body;
 
-    res.render("home.ejs")
+    // normalize to arrays (single item comes as a string)
+    const fooditems = [].concat(fooditem);
+    const quantities = [].concat(quantity);
+
+    const results = await Promise.all(
+        fooditems.map((name, i) =>
+            foodModel.findOne({ name }).select("_id name").then(doc => ({
+                food: doc,
+                quantity: quantities[i]
+            }))
+        )
+    );
+
+    console.log(results);
+    res.render("home.ejs", { results })
 })
 
 app.listen(8080, () => {

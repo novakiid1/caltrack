@@ -6,19 +6,33 @@
     <title>Home</title>
 </head>
 <body>
-    <h2>enter details</h2>
-<div class="">
-    <form action="/home" method="post">
-        <label for="fooditem">enter the food</label>
-        <br>
-        <input type="text" name="fooditem" id="fooditem" placeholder="log them cals">
-        <br>
-        <label for="quantity">enter the food</label>
-        <br>
-        <input type="text" name="quantity" id="quantity" placeholder="quantity">
-        <br>
-        <button type="submit">submit </button>
-    </form>
-</div>
+    <h2>log a meal</h2>
+    <div>
+        <form action="/home" method="post">
+            <div id="items">
+                <div class="item-row">
+                    <input type="text" name="fooditem[]" placeholder="food item">
+                    <input type="number" name="quantity[]" placeholder="quantity (g)">
+                </div>
+            </div>
+            <br>
+            <button type="button" onclick="addRow()">+ add item</button>
+            <br><br>
+            <button type="submit">submit</button>
+        </form>
+    </div>
+
+    <script>
+        function addRow() {
+            const row = document.createElement('div');
+            row.className = 'item-row';
+            row.innerHTML = `
+                <input type="text" name="fooditem[]" placeholder="food item">
+                <input type="number" name="quantity[]" placeholder="quantity (g)">
+                <button type="button" onclick="this.parentElement.remove()">remove</button>
+            `;
+            document.getElementById('items').appendChild(row);
+        }
+    </script>
 </body>
 </html>
