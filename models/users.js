@@ -1,20 +1,6 @@
 import mongoose from 'mongoose';
 import './fooditems.js';
 
-const mongodbURL = "mongodb://localhost:27017/caltrack";
-
-main()
-    .then((result) => {
-        console.log("connected to db and data has been successfully initialized");
-    })
-    .catch((err) => {
-        console.log(err);
-    });
-async function main() {
-    await mongoose.connect(mongodbURL);
-    // await insertUser();
-}
-
 const userSchema = new mongoose.Schema({
     name: String,
     email: String,
@@ -75,14 +61,5 @@ userMealSchema.pre("save", async function () {
 
 const userMealModel = mongoose.model("usermeals", userMealSchema);
 const userModel = mongoose.model("users", userSchema);
-
-
-const user1 = new userModel({
-    name: "naman",
-    email: "thisismyemail@mail.com",
-    password: "thisismypassword"
-});
-
-let userdata = user1.save();
 
 export { userModel, userMealModel };

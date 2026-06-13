@@ -4,7 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "playwright test",
+    "test:ui:headed": "playwright test --headed"
   },
   "keywords": [],
   "author": "",
@@ -17,5 +21,11 @@
     "express-session": "^1.19.0",
     "mongoose": "^9.6.3",
     "uuid": "^14.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "mongodb-memory-server": "^11.2.0",
+    "supertest": "^7.2.2",
+    "vitest": "^4.1.8"
   }
 }
