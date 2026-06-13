@@ -1,8 +1,7 @@
 import mongoose from 'mongoose';
+import './fooditems.js';
 
 const mongodbURL = "mongodb://localhost:27017/caltrack";
-
-
 
 main()
     .then((result) => {
@@ -27,12 +26,14 @@ const userMealSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "users"
     },
+    mealNumber: Number,
     name: String,
     mealItems: [
         {
+            _id: false,
             item: {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: "fooditems"
+                ref: "fooditem"
             },
             quantity: Number
         }
@@ -52,6 +53,8 @@ const userMealSchema = new mongoose.Schema({
 })
 
 userMealSchema.pre("save", async function () {
+    const count = await userMealModel.countDocuments();
+    this.mealNumber = count + 1;
     await this.populate("mealItems.item");
     const sum = { calories: 0, protein: 0, fats: 0, carbs: 0, fibre: 0 };
     for (const mi of this.mealItems) {
@@ -78,25 +81,4 @@ const user1 = new userModel({
 
 let userdata = user1.save();
 
-
-
-// const userMeal=new userMealSchema({
-//     user:user1,
-//     name:"lunch",
-//     meal:,
-// });
-export default { userModel, userMealModel };
-
-
-
-// calories: Number,
-//     protein: Number,
-//     fats: Number,
-//     carbs: Number,
-//     fibre: Number
-
-
-// mealitem1 = {
-//     item: refId,
-//     quantity: 1,
-// }
+export { userModel, userMealModel };
