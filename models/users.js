@@ -18,7 +18,14 @@ async function main() {
 const userSchema = new mongoose.Schema({
     name: String,
     email: String,
-    password: String
+    password: String,
+    goals: {
+        calories: Number,
+        protein:  Number,
+        fats:     Number,
+        carbs:    Number,
+        fibre:    Number
+    }
 })
 
 const userMealSchema = new mongoose.Schema({
@@ -26,7 +33,6 @@ const userMealSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "users"
     },
-    mealNumber: Number,
     name: String,
     mealItems: [
         {
@@ -53,8 +59,6 @@ const userMealSchema = new mongoose.Schema({
 })
 
 userMealSchema.pre("save", async function () {
-    const count = await userMealModel.countDocuments();
-    this.mealNumber = count + 1;
     await this.populate("mealItems.item");
     const sum = { calories: 0, protein: 0, fats: 0, carbs: 0, fibre: 0 };
     for (const mi of this.mealItems) {

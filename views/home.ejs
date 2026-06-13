@@ -94,27 +94,28 @@
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 1rem 1.25rem;
+            overflow: hidden;
+        }
+
+        .meal-summary {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 1rem;
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            list-style: none;
+            user-select: none;
         }
+
+        .meal-summary::-webkit-details-marker { display: none; }
+
+        .meal-summary:hover { background: var(--surface-2); }
 
         .meal-left {
             display: flex;
             align-items: center;
             gap: 0.75rem;
-        }
-
-        .meal-badge {
-            background: var(--primary-dim);
-            color: var(--primary);
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 0.25rem 0.6rem;
-            border-radius: 6px;
-            white-space: nowrap;
         }
 
         .meal-name {
@@ -128,12 +129,65 @@
             margin-top: 0.15rem;
         }
 
+        .meal-right {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
         .meal-kcal {
             font-size: 0.9rem;
             font-weight: 600;
             color: var(--primary);
             white-space: nowrap;
         }
+
+        .chevron {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            transition: transform 0.2s;
+        }
+
+        details[open] .chevron { transform: rotate(180deg); }
+
+        .meal-detail {
+            border-top: 1px solid var(--border);
+            padding: 0.75rem 1.25rem 1rem;
+        }
+
+        .detail-items {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-bottom: 0.85rem;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+        }
+
+        .detail-item-name { color: var(--text); }
+
+        .detail-item-qty { color: var(--text-muted); }
+
+        .macro-row {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .macro-pill {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.6rem;
+            color: var(--text-muted);
+        }
+
+        .macro-pill span { color: var(--text); font-weight: 600; }
 
         .empty-state {
             background: var(--surface);
@@ -294,18 +348,36 @@
         <% if (meals.length) { %>
             <div class="meals-list">
                 <% meals.forEach(meal => { %>
-                    <div class="meal-card">
-                        <div class="meal-left">
-                            <span class="meal-badge">#<%= meal.mealNumber %></span>
-                            <div>
-                                <div class="meal-name">
-                                    <%= meal.mealtype || 'untitled meal' %>
+                    <details class="meal-card">
+                        <summary class="meal-summary">
+                            <div class="meal-left">
+                                <div>
+                                    <div class="meal-name"><%= meal.mealtype || 'untitled meal' %></div>
+                                    <div class="meal-meta"><%= new Date(meal.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) %></div>
                                 </div>
-                                <div class="meal-meta"><%= new Date(meal.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) %></div>
+                            </div>
+                            <div class="meal-right">
+                                <span class="meal-kcal"><%= meal.totals.calories %> kcal</span>
+                                <span class="chevron">▼</span>
+                            </div>
+                        </summary>
+                        <div class="meal-detail">
+                            <div class="detail-items">
+                                <% meal.mealItems.forEach(mi => { %>
+                                    <div class="detail-item">
+                                        <span class="detail-item-name"><%= mi.item.name %></span>
+                                        <span class="detail-item-qty"><%= mi.quantity %>g</span>
+                                    </div>
+                                <% }) %>
+                            </div>
+                            <div class="macro-row">
+                                <div class="macro-pill">protein <span><%= meal.totals.protein %>g</span></div>
+                                <div class="macro-pill">carbs <span><%= meal.totals.carbs %>g</span></div>
+                                <div class="macro-pill">fats <span><%= meal.totals.fats %>g</span></div>
+                                <div class="macro-pill">fibre <span><%= meal.totals.fibre %>g</span></div>
                             </div>
                         </div>
-                        <div class="meal-kcal"><%= meal.totals.calories %> kcal</div>
-                    </div>
+                    </details>
                 <% }) %>
             </div>
         <% } else { %>

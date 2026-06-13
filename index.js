@@ -30,6 +30,12 @@ const isLoggedIn = (req, res, next) => {
     next();
 };
 
+const hasGoals = async (req, res, next) => {
+    const user = await userModel.findById(req.session.userId).select("goals");
+    if (!user.goals?.calories) return res.redirect("/setup");
+    next();
+};
+
 app.get("/", (req, res) => {
     res.redirect("/home");
 })
@@ -59,7 +65,7 @@ app.post("/register", async (req, res) => {
     const user = new userModel({ name, email, password });
     await user.save();
     req.session.userId = user._id;
-    res.redirect("/home");
+    res.redirect("/setup");
 })
 
 app.get("/logout", (req, res) => {
@@ -67,14 +73,35 @@ app.get("/logout", (req, res) => {
     res.redirect("/login");
 })
 
+// --- setup routes ---
+
+app.get("/setup", isLoggedIn, async (req, res) => {
+    const user = await userModel.findById(req.session.userId).select("name goals");
+    res.render("setup.ejs", { user });
+})
+
+app.post("/setup", isLoggedIn, async (req, res) => {
+    const { calories, protein, fats, carbs, fibre } = req.body;
+    await userModel.findByIdAndUpdate(req.session.userId, {
+        goals: {
+            calories: Number(calories),
+            protein:  Number(protein),
+            fats:     Number(fats),
+            carbs:    Number(carbs),
+            fibre:    Number(fibre)
+        }
+    });
+    res.redirect("/home");
+})
+
 // --- home routes ---
 
-app.get("/home", isLoggedIn, async (req, res) => {
-    const meals = await userMealModel.find({ user: req.session.userId }).sort({ date: -1 });
+app.get("/home", isLoggedIn, hasGoals, async (req, res) => {
+    const meals = await userMealModel.find({ user: req.session.userId }).sort({ date: -1 }).limit(4).populate("mealItems.item");
     res.render("home.ejs", { meals });
 })
 
-app.post("/home", isLoggedIn, async (req, res) => {
+app.post("/home", isLoggedIn, hasGoals, async (req, res) => {
     let { fooditem, quantity, mealtype } = req.body;
 
     const fooditems = [].concat(fooditem);
