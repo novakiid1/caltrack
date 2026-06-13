@@ -7,5 +7,11 @@ export default defineConfig({
         testTimeout: 30000,
         fileParallelism: false,
         include: ['tests/backend/**/*.test.js'],
+        browser: {
+            enabled: true,
+            name: 'chromium',      // Can be 'chromium', 'firefox', or 'webkit'
+            provider: 'playwright', // Uses Playwright under the hood
+            headless: false
+        }
     }
 });
