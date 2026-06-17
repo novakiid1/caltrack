@@ -19,6 +19,7 @@
             --text-muted: #94a3b8;
             --border: #334155;
             --danger: #f87171;
+            --warning: #fb923c;
             --radius: 14px;
         }
 
@@ -43,11 +44,11 @@
             z-index: 10;
         }
 
-        .logo {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
+        .logo { font-size: 1.25rem; font-weight: 700; color: var(--primary); }
+
+        .header-right { display: flex; align-items: center; gap: 1rem; }
+
+        .today-date { font-size: 0.8rem; color: var(--text-muted); }
 
         .logout-btn {
             background: transparent;
@@ -61,17 +62,10 @@
             transition: border-color 0.2s, color 0.2s;
         }
 
-        .logout-btn:hover {
-            border-color: var(--danger);
-            color: var(--danger);
-        }
+        .logout-btn:hover { border-color: var(--danger); color: var(--danger); }
 
         /* ── layout ── */
-        main {
-            max-width: 680px;
-            margin: 0 auto;
-            padding: 2rem 1.5rem;
-        }
+        main { max-width: 680px; margin: 0 auto; padding: 2rem 1.5rem; }
 
         .section-title {
             font-size: 0.75rem;
@@ -82,13 +76,76 @@
             margin-bottom: 1rem;
         }
 
-        /* ── meal cards ── */
-        .meals-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
+        /* ── daily summary card ── */
+        .daily-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem 1.5rem;
             margin-bottom: 2rem;
         }
+
+        .daily-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 0.6rem;
+        }
+
+        .daily-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+
+        .daily-kcal { font-size: 1.1rem; font-weight: 700; color: var(--primary); }
+
+        .daily-kcal.over { color: var(--danger); }
+
+        .progress-bar {
+            background: var(--surface-2);
+            border-radius: 999px;
+            height: 6px;
+            overflow: hidden;
+            margin-bottom: 1.1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 999px;
+            transition: width 0.4s ease;
+        }
+
+        .progress-fill.over { background: var(--danger); }
+
+        .macro-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+
+        .macro-cell {
+            background: var(--surface-2);
+            border-radius: 8px;
+            padding: 0.5rem 0.6rem;
+        }
+
+        .macro-key {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.2rem;
+        }
+
+        .macro-val {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .macro-val .consumed { color: var(--primary); }
+        .macro-val .consumed.over { color: var(--danger); }
+
+        /* ── meal cards ── */
+        .meals-list { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem; }
 
         .meal-card {
             background: var(--surface);
@@ -109,44 +166,28 @@
         }
 
         .meal-summary::-webkit-details-marker { display: none; }
-
         .meal-summary:hover { background: var(--surface-2); }
 
-        .meal-left {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
+        .meal-left { display: flex; align-items: center; gap: 0.75rem; }
 
-        .meal-name {
-            font-weight: 500;
-            font-size: 0.95rem;
-        }
-
-        .meal-meta {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-top: 0.15rem;
-        }
-
-        .meal-right {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .meal-kcal {
-            font-size: 0.9rem;
-            font-weight: 600;
+        .mealtype-pill {
+            background: var(--primary-dim);
             color: var(--primary);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            text-transform: capitalize;
             white-space: nowrap;
         }
 
-        .chevron {
-            color: var(--text-muted);
-            font-size: 0.75rem;
-            transition: transform 0.2s;
-        }
+        .meal-time { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.1rem; }
+
+        .meal-right { display: flex; align-items: center; gap: 0.75rem; }
+
+        .meal-kcal { font-size: 0.9rem; font-weight: 600; color: var(--primary); white-space: nowrap; }
+
+        .chevron { color: var(--text-muted); font-size: 0.75rem; transition: transform 0.2s; }
 
         details[open] .chevron { transform: rotate(180deg); }
 
@@ -155,28 +196,37 @@
             padding: 0.75rem 1.25rem 1rem;
         }
 
-        .detail-items {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-            margin-bottom: 0.85rem;
-        }
+        .detail-items { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.85rem; }
 
-        .detail-item {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.85rem;
-        }
+        .detail-item { display: flex; justify-content: space-between; font-size: 0.85rem; }
 
         .detail-item-name { color: var(--text); }
 
         .detail-item-qty { color: var(--text-muted); }
 
-        .macro-row {
+        .detail-footer {
             display: flex;
-            gap: 0.5rem;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
             flex-wrap: wrap;
         }
+
+        .edit-btn {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-decoration: none;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.3rem 0.7rem;
+            white-space: nowrap;
+            transition: color 0.15s, border-color 0.15s;
+        }
+
+        .edit-btn:hover { color: var(--primary); border-color: var(--primary); }
+
+        .macro-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
         .macro-pill {
             background: var(--surface-2);
@@ -189,6 +239,20 @@
 
         .macro-pill span { color: var(--text); font-weight: 600; }
 
+        /* running total row between meals */
+        .running-total {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .running-total::before { content: ''; flex: 1; height: 1px; background: var(--border); }
+        .running-total::after  { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        /* ── empty state ── */
         .empty-state {
             background: var(--surface);
             border: 1px dashed var(--border);
@@ -200,21 +264,9 @@
             margin-bottom: 2rem;
         }
 
-        .empty-icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-
         /* ── meal type pills ── */
-        .meal-type-group {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-bottom: 1.25rem;
-        }
-
+        .meal-type-group { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
         .meal-type-group input[type="radio"] { display: none; }
-
         .meal-type-group label {
             background: var(--surface-2);
             border: 1px solid var(--border);
@@ -227,22 +279,10 @@
             transition: all 0.15s;
             text-transform: capitalize;
         }
-
         .meal-type-group input[type="radio"]:checked + label {
             background: var(--primary-dim);
             border-color: var(--primary);
             color: var(--primary);
-        }
-
-        .mealtype-tag {
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: capitalize;
-            padding: 0.2rem 0.55rem;
-            border-radius: 999px;
-            background: var(--surface-2);
-            color: var(--text-muted);
-            border: 1px solid var(--border);
         }
 
         /* ── add meal form ── */
@@ -261,8 +301,7 @@
             margin-bottom: 0.5rem;
         }
 
-        input[type="text"],
-        input[type="number"] {
+        input[type="text"], input[type="number"] {
             background: var(--surface-2);
             border: 1px solid var(--border);
             border-radius: 8px;
@@ -275,7 +314,6 @@
         }
 
         input[type="number"] { width: 100px; }
-
         input:focus { border-color: var(--primary); }
         input::placeholder { color: var(--text-muted); }
 
@@ -291,73 +329,92 @@
         }
 
         .btn:active { transform: scale(0.97); }
-
-        .btn-primary {
-            background: var(--primary);
-            color: #0f172a;
-        }
-
+        .btn-primary { background: var(--primary); color: #0f172a; }
         .btn-primary:hover { background: var(--primary-hover); }
-
-        .btn-ghost {
-            background: var(--surface-2);
-            color: var(--text-muted);
-            border: 1px solid var(--border);
-        }
-
+        .btn-ghost { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border); }
         .btn-ghost:hover { color: var(--text); border-color: var(--text-muted); }
-
-        .btn-danger {
-            background: transparent;
-            color: var(--danger);
-            border: 1px solid transparent;
-            padding: 0.65rem 0.5rem;
-        }
-
+        .btn-danger { background: transparent; color: var(--danger); border: 1px solid transparent; padding: 0.65rem 0.5rem; }
         .btn-danger:hover { border-color: var(--danger); }
 
-        .form-actions {
-            display: flex;
-            gap: 0.75rem;
-            margin-top: 1.25rem;
-        }
-
-        .btn-submit {
-            flex: 1;
-            padding: 0.75rem;
-            font-size: 0.95rem;
-        }
+        .form-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
+        .btn-submit { flex: 1; padding: 0.75rem; font-size: 0.95rem; }
 
         @media (max-width: 500px) {
+            .macro-grid { grid-template-columns: repeat(2, 1fr); }
             .item-row { grid-template-columns: 1fr auto; }
             input[type="number"] { width: 80px; }
-            .meal-card { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
 <body>
+    <% const dt = dayDoc?.dailyTotals || { calories: 0, protein: 0, fats: 0, carbs: 0, fibre: 0 }; %>
+    <% const g  = user.goals; %>
+    <% const pct = g.calories > 0 ? Math.min(dt.calories / g.calories * 100, 100) : 0; %>
+    <% const over = dt.calories > g.calories; %>
+    <% function r(n) { return Math.round(n * 10) / 10; } %>
+    <% function fmtQty(qty, unit) {
+        if (unit === 'unit') return qty === 1 ? '1 unit' : `${qty} units`;
+        return `${qty}${unit || 'g'}`;
+    } %>
+
     <header>
         <span class="logo">CalTrack</span>
-        <a href="/logout" class="logout-btn">logout</a>
+        <div class="header-right">
+            <span class="today-date"><%= new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) %></span>
+            <a href="/logout" class="logout-btn">logout</a>
+        </div>
     </header>
 
     <main>
-        <!-- meals list -->
-        <div class="section-title">your meals</div>
+        <!-- daily summary -->
+        <div class="section-title">today's summary</div>
+        <div class="daily-card">
+            <div class="daily-header">
+                <span class="daily-label">calories</span>
+                <span class="daily-kcal <%= over ? 'over' : '' %>">
+                    <%= Math.round(dt.calories) %> / <%= g.calories %> kcal
+                </span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill <%= over ? 'over' : '' %>" style="width: <%= pct %>%"></div>
+            </div>
+            <div class="macro-grid">
+                <% [['protein','protein'],['carbs','carbs'],['fats','fats'],['fibre','fibre']].forEach(([key, label]) => { %>
+                    <% const isOver = r(dt[key]) > g[key]; %>
+                    <div class="macro-cell">
+                        <div class="macro-key"><%= label %></div>
+                        <div class="macro-val">
+                            <span class="consumed <%= isOver ? 'over' : '' %>"><%= r(dt[key]) %>g</span>
+                            <span style="color:var(--text-muted)"> / <%= g[key] %>g</span>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
 
-        <% if (meals.length) { %>
+        <!-- today's meals -->
+        <div class="section-title">today's meals</div>
+
+        <% if (dayDoc?.meals?.length) { %>
+            <%
+                // build running totals per meal for the "running total" row
+                let runCal = 0;
+            %>
             <div class="meals-list">
-                <% meals.forEach(meal => { %>
+                <% dayDoc.meals.forEach((meal, idx) => { %>
+                    <%
+                        runCal += meal.totals.calories;
+                    %>
                     <details class="meal-card">
                         <summary class="meal-summary">
                             <div class="meal-left">
-                                <div>
-                                    <div class="meal-name"><%= meal.mealtype || 'untitled meal' %></div>
-                                    <div class="meal-meta"><%= new Date(meal.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) %></div>
+                                <span class="mealtype-pill"><%= meal.mealtype || 'meal' %></span>
+                                <div class="meal-time">
+                                    <%= new Date(meal.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) %>
                                 </div>
                             </div>
                             <div class="meal-right">
-                                <span class="meal-kcal"><%= meal.totals.calories %> kcal</span>
+                                <span class="meal-kcal"><%= Math.round(meal.totals.calories) %> kcal</span>
                                 <span class="chevron">▼</span>
                             </div>
                         </summary>
@@ -366,24 +423,30 @@
                                 <% meal.mealItems.forEach(mi => { %>
                                     <div class="detail-item">
                                         <span class="detail-item-name"><%= mi.item.name %></span>
-                                        <span class="detail-item-qty"><%= mi.quantity %>g</span>
+                                        <span class="detail-item-qty"><%= fmtQty(mi.quantity, mi.item.unit) %></span>
                                     </div>
                                 <% }) %>
                             </div>
-                            <div class="macro-row">
-                                <div class="macro-pill">protein <span><%= meal.totals.protein %>g</span></div>
-                                <div class="macro-pill">carbs <span><%= meal.totals.carbs %>g</span></div>
-                                <div class="macro-pill">fats <span><%= meal.totals.fats %>g</span></div>
-                                <div class="macro-pill">fibre <span><%= meal.totals.fibre %>g</span></div>
+                            <div class="detail-footer">
+                                <div class="macro-row">
+                                    <div class="macro-pill">protein <span><%= r(meal.totals.protein) %>g</span></div>
+                                    <div class="macro-pill">carbs <span><%= r(meal.totals.carbs) %>g</span></div>
+                                    <div class="macro-pill">fats <span><%= r(meal.totals.fats) %>g</span></div>
+                                    <div class="macro-pill">fibre <span><%= r(meal.totals.fibre) %>g</span></div>
+                                </div>
+                                <a href="/meal/<%= meal._id %>" class="edit-btn">edit</a>
                             </div>
                         </div>
                     </details>
+
+                    <% if (idx < dayDoc.meals.length - 1) { %>
+                        <div class="running-total">running total: <%= Math.round(runCal) %> kcal</div>
+                    <% } %>
                 <% }) %>
             </div>
         <% } else { %>
             <div class="empty-state">
-                <div class="empty-icon">🥗</div>
-                no meals logged yet — add one below
+                no meals logged today — add one below
             </div>
         <% } %>
 

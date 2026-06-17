@@ -19,15 +19,14 @@ test.describe('Meal display (mocked DB)', () => {
         await expect(page.locator('details.meal-card')).toHaveCount(3);
     });
 
-    test('caps display at 4 when more than 4 meals seeded', async ({ page, request }) => {
+    test('all daily meals shown (no cap)', async ({ page, request }) => {
         await seedAndLogin(page, request, 6);
-        await expect(page.locator('details.meal-card')).toHaveCount(4);
+        await expect(page.locator('details.meal-card')).toHaveCount(6);
     });
 
-    test('most recent meal appears first with correct mealtype', async ({ page, request }) => {
+    test('most recent meal is last (meals shown in chronological order)', async ({ page, request }) => {
         const { latestMealtype } = await seedAndLogin(page, request, 3);
-        // home sorts by date desc — the last seeded meal is first
-        await expect(page.locator('.meal-name').first()).toContainText(latestMealtype);
+        await expect(page.locator('.mealtype-pill').last()).toContainText(latestMealtype);
     });
 
     test('meal card shows the correct calorie total from DB', async ({ page, request }) => {
@@ -36,12 +35,23 @@ test.describe('Meal display (mocked DB)', () => {
         expect(kcalText).toContain(String(latestCalories));
     });
 
-    test('expanded card shows food item name and quantity', async ({ page, request }) => {
-        const { latestFoodName } = await seedAndLogin(page, request, 1);
+    test('expanded card shows food item name and quantity with correct unit', async ({ page, request }) => {
+        const { latestFoodName, latestFoodUnit } = await seedAndLogin(page, request, 1);
         const card = page.locator('details.meal-card').first();
         await card.click();
         await expect(card.locator('.detail-item-name').first()).toContainText(latestFoodName);
-        await expect(card.locator('.detail-item-qty').first()).toContainText('100g');
+
+        // unit=g → '100g', unit=unit → '100 units'
+        const expectedQty = latestFoodUnit === 'unit' ? '100 units' : `100${latestFoodUnit}`;
+        await expect(card.locator('.detail-item-qty').first()).toContainText(expectedQty);
+    });
+
+    test('unit items (egg) display as "units" not grams', async ({ page, request }) => {
+        // count=3 → foods cycle: chicken(0), rice(1), egg(2); egg is last
+        const data = await seedAndLogin(page, request, 3);
+        const lastCard = page.locator('details.meal-card').last();
+        await lastCard.click();
+        await expect(lastCard.locator('.detail-item-qty').first()).toContainText('units');
     });
 
     test('expanded card shows all four macro pills', async ({ page, request }) => {
@@ -54,7 +64,6 @@ test.describe('Meal display (mocked DB)', () => {
     });
 
     test('multiple food items in one meal all appear when expanded', async ({ page, request }) => {
-        // Seed gives a logged-in user with goals. Add a 2-item meal via UI on top.
         await seedAndLogin(page, request, 1);
 
         await page.fill('[name="fooditem[]"]', 'chicken');
@@ -65,8 +74,8 @@ test.describe('Meal display (mocked DB)', () => {
         await page.click('[type="submit"]');
         await page.waitForURL('/home');
 
-        // Newest meal (2 items) is first
-        const card = page.locator('details.meal-card').first();
+        // Newest meal (2 items) is last in chronological order
+        const card = page.locator('details.meal-card').last();
         await card.click();
         await expect(card.locator('.detail-item-name')).toHaveCount(2);
         await expect(card.locator('.detail-item-qty')).toHaveCount(2);
@@ -76,7 +85,6 @@ test.describe('Meal display (mocked DB)', () => {
         await seedAndLogin(page, request, 3);
         const cards = page.locator('details.meal-card');
         await cards.first().click();
-        // Only the first card should have an open attribute
         await expect(cards.first()).toHaveAttribute('open', '');
         await expect(cards.nth(1)).not.toHaveAttribute('open', '');
         await expect(cards.nth(2)).not.toHaveAttribute('open', '');

@@ -78,12 +78,16 @@ app.post("/setup", isLoggedIn, async (req, res) => {
 })
 
 app.get("/home", isLoggedIn, hasGoals, async (req, res) => {
-    const meals = await userMealModel
-        .find({ user: req.session.userId })
-        .sort({ date: -1 })
-        .limit(4)
-        .populate("mealItems.item");
-    res.render("home.ejs", { meals });
+    const user = await userModel.findById(req.session.userId).select("name goals");
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dayDoc = await userMealModel
+        .findOne({ user: req.session.userId, date: today })
+        .populate("meals.mealItems.item");
+
+    res.render("home.ejs", { user, dayDoc });
 })
 
 app.post("/home", isLoggedIn, hasGoals, async (req, res) => {
@@ -99,10 +103,61 @@ app.post("/home", isLoggedIn, hasGoals, async (req, res) => {
             return { item: doc._id, quantity: Number(quantities[i]) };
         })
     );
-    const meal = new userMealModel({ user: req.session.userId, mealItems, mealtype });
-    await meal.save();
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let dayDoc = await userMealModel.findOne({ user: req.session.userId, date: today });
+    if (!dayDoc) {
+        dayDoc = new userMealModel({ user: req.session.userId, date: today, meals: [] });
+    }
+
+    dayDoc.meals.push({ mealtype, mealItems });
+    await dayDoc.save();
 
     res.redirect("/home");
+})
+
+app.get("/meal/:mealId", isLoggedIn, hasGoals, async (req, res) => {
+    const dayDoc = await userMealModel
+        .findOne({ user: req.session.userId, 'meals._id': req.params.mealId })
+        .populate('meals.mealItems.item');
+    if (!dayDoc) return res.redirect('/home');
+    const meal = dayDoc.meals.id(req.params.mealId);
+    res.render('edit-meal.ejs', { meal });
+})
+
+app.post("/meal/:mealId", isLoggedIn, hasGoals, async (req, res) => {
+    let { fooditem, quantity } = req.body;
+
+    const fooditems = [].concat(fooditem);
+    const quantities = [].concat(quantity);
+
+    // Filter out blank rows, resolve each name to _id
+    const pairs = fooditems
+        .map((name, i) => ({ name: name?.trim(), qty: Number(quantities[i]) }))
+        .filter(p => p.name);
+
+    const mealItems = await Promise.all(
+        pairs.map(async ({ name, qty }) => {
+            const doc = await foodModel.findOne({ name }).select('_id');
+            if (!doc) throw new Error(`Food item "${name}" not found in DB`);
+            return { item: doc._id, quantity: qty };
+        })
+    );
+
+    const dayDoc = await userMealModel.findOne({
+        user: req.session.userId,
+        'meals._id': req.params.mealId
+    });
+    if (!dayDoc) return res.redirect('/home');
+
+    // Replace entire mealItems array — handles add, edit, and remove
+    const meal = dayDoc.meals.id(req.params.mealId);
+    meal.mealItems = mealItems;
+    await dayDoc.save();
+
+    res.redirect('/home');
 })
 
 export default app;

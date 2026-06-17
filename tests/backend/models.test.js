@@ -3,6 +3,12 @@ import { userModel, userMealModel } from '../../models/users.js';
 import foodModel from '../../models/fooditems.js';
 import { setupDB, teardownDB, clearDB, seedFoodItems } from '../helpers/db.js';
 
+function startOfToday() {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
 describe('UserMeal pre-save hook', () => {
     beforeAll(setupDB);
     afterAll(teardownDB);
@@ -11,70 +17,93 @@ describe('UserMeal pre-save hook', () => {
     it('calculates totals for a single item', async () => {
         const user = await userModel.create({ name: 'T', email: 't@t.com', password: 'pw' });
         const chicken = await foodModel.findOne({ name: 'chicken' });
-        const meal = new userMealModel({
-            user: user._id,
-            mealItems: [{ item: chicken._id, quantity: 100 }],
-            mealtype: 'lunch'
-        });
-        await meal.save();
 
-        expect(meal.totals.calories).toBeCloseTo(200);   // 2 * 100
-        expect(meal.totals.protein).toBeCloseTo(30);     // 0.3 * 100
-        expect(meal.totals.fats).toBeCloseTo(5);         // 0.05 * 100
-        expect(meal.totals.carbs).toBeCloseTo(0);
+        const dayDoc = new userMealModel({
+            user: user._id,
+            date: startOfToday(),
+            meals: [{ mealtype: 'lunch', mealItems: [{ item: chicken._id, quantity: 100 }] }]
+        });
+        await dayDoc.save();
+
+        expect(dayDoc.meals[0].totals.calories).toBeCloseTo(200);   // 2 * 100
+        expect(dayDoc.meals[0].totals.protein).toBeCloseTo(30);     // 0.3 * 100
+        expect(dayDoc.meals[0].totals.fats).toBeCloseTo(5);         // 0.05 * 100
+        expect(dayDoc.meals[0].totals.carbs).toBeCloseTo(0);
     });
 
-    it('sums totals across multiple items', async () => {
+    it('sums daily totals across multiple meals', async () => {
         const user = await userModel.create({ name: 'T', email: 't@t.com', password: 'pw' });
         const chicken = await foodModel.findOne({ name: 'chicken' });
         const rice    = await foodModel.findOne({ name: 'rice' });
-        const meal = new userMealModel({
-            user: user._id,
-            mealItems: [
-                { item: chicken._id, quantity: 100 },
-                { item: rice._id,    quantity: 200 },
-            ],
-            mealtype: 'lunch'
-        });
-        await meal.save();
 
-        // chicken: 2*100=200, rice: 1.3*200=260 → 460
-        expect(meal.totals.calories).toBeCloseTo(460);
-        // protein: 0.3*100 + 0.027*200 = 30 + 5.4 = 35.4
-        expect(meal.totals.protein).toBeCloseTo(35.4);
+        const dayDoc = new userMealModel({
+            user: user._id,
+            date: startOfToday(),
+            meals: [
+                { mealtype: 'breakfast', mealItems: [{ item: chicken._id, quantity: 100 }] },
+                { mealtype: 'lunch',     mealItems: [{ item: rice._id,    quantity: 200 }] },
+            ]
+        });
+        await dayDoc.save();
+
+        // breakfast: 2*100=200, lunch: 1.3*200=260 → daily: 460
+        expect(dayDoc.dailyTotals.calories).toBeCloseTo(460);
+        // Each meal's own totals are also calculated
+        expect(dayDoc.meals[0].totals.calories).toBeCloseTo(200);
+        expect(dayDoc.meals[1].totals.calories).toBeCloseTo(260);
     });
 
-    it('stores mealtype', async () => {
+    it('recalculates daily totals when a new meal is pushed and re-saved', async () => {
         const user = await userModel.create({ name: 'T', email: 't@t.com', password: 'pw' });
         const chicken = await foodModel.findOne({ name: 'chicken' });
-        const meal = new userMealModel({
-            user: user._id,
-            mealItems: [{ item: chicken._id, quantity: 50 }],
-            mealtype: 'breakfast'
+        const rice    = await foodModel.findOne({ name: 'rice' });
+        const today   = startOfToday();
+
+        const dayDoc = new userMealModel({
+            user: user._id, date: today,
+            meals: [{ mealtype: 'breakfast', mealItems: [{ item: chicken._id, quantity: 100 }] }]
         });
-        await meal.save();
-        expect(meal.mealtype).toBe('breakfast');
+        await dayDoc.save();
+        expect(dayDoc.dailyTotals.calories).toBeCloseTo(200);
+
+        dayDoc.meals.push({ mealtype: 'lunch', mealItems: [{ item: rice._id, quantity: 100 }] });
+        await dayDoc.save();
+        // 200 + 1.3*100 = 330
+        expect(dayDoc.dailyTotals.calories).toBeCloseTo(330);
+    });
+
+    it('stores mealtype on each meal subdoc', async () => {
+        const user = await userModel.create({ name: 'T', email: 't@t.com', password: 'pw' });
+        const chicken = await foodModel.findOne({ name: 'chicken' });
+        const dayDoc = new userMealModel({
+            user: user._id, date: startOfToday(),
+            meals: [{ mealtype: 'breakfast', mealItems: [{ item: chicken._id, quantity: 50 }] }]
+        });
+        await dayDoc.save();
+        expect(dayDoc.meals[0].mealtype).toBe('breakfast');
     });
 
     it('mealItems have no _id field', async () => {
         const user = await userModel.create({ name: 'T', email: 't@t.com', password: 'pw' });
         const chicken = await foodModel.findOne({ name: 'chicken' });
-        const meal = new userMealModel({
-            user: user._id,
-            mealItems: [{ item: chicken._id, quantity: 50 }],
-            mealtype: 'snack'
+        const dayDoc = new userMealModel({
+            user: user._id, date: startOfToday(),
+            meals: [{ mealtype: 'snack', mealItems: [{ item: chicken._id, quantity: 50 }] }]
         });
-        await meal.save();
-        expect(meal.mealItems[0]._id).toBeUndefined();
+        await dayDoc.save();
+        expect(dayDoc.meals[0].mealItems[0]._id).toBeUndefined();
     });
 
-    it('ties meal to correct user', async () => {
+    it('ties day document to correct user', async () => {
         const userA = await userModel.create({ name: 'A', email: 'a@t.com', password: 'pw' });
         const userB = await userModel.create({ name: 'B', email: 'b@t.com', password: 'pw' });
         const chicken = await foodModel.findOne({ name: 'chicken' });
-        await userMealModel.create({ user: userA._id, mealItems: [{ item: chicken._id, quantity: 50 }], mealtype: 'lunch' });
+        await userMealModel.create({
+            user: userA._id, date: startOfToday(),
+            meals: [{ mealtype: 'lunch', mealItems: [{ item: chicken._id, quantity: 50 }] }]
+        });
 
-        const mealsB = await userMealModel.find({ user: userB._id });
-        expect(mealsB).toHaveLength(0);
+        const docsB = await userMealModel.find({ user: userB._id });
+        expect(docsB).toHaveLength(0);
     });
 });
