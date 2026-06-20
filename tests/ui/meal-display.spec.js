@@ -36,22 +36,28 @@ test.describe('Meal display (mocked DB)', () => {
     });
 
     test('expanded card shows food item name and quantity with correct unit', async ({ page, request }) => {
-        const { latestFoodName, latestFoodUnit } = await seedAndLogin(page, request, 1);
+        const { latestFoodName, latestFoodUnit, latestFoodDefaultWeight, latestQty } = await seedAndLogin(page, request, 1);
         const card = page.locator('details.meal-card').first();
         await card.click();
         await expect(card.locator('.detail-item-name').first()).toContainText(latestFoodName);
 
-        // unit=g → '100g', unit=unit → '100 units'
-        const expectedQty = latestFoodUnit === 'unit' ? '100 units' : `100${latestFoodUnit}`;
+        let expectedQty;
+        if (latestFoodUnit === 'unit') {
+            const label = latestQty === 1 ? '1 unit' : `${latestQty} units`;
+            expectedQty = latestFoodDefaultWeight ? `${label} (${latestQty * latestFoodDefaultWeight}g)` : label;
+        } else {
+            expectedQty = `${latestQty}${latestFoodUnit}`;
+        }
         await expect(card.locator('.detail-item-qty').first()).toContainText(expectedQty);
     });
 
-    test('unit items (egg) display as "units" not grams', async ({ page, request }) => {
+    test('unit items (egg) display as "units (Xg)" not raw grams', async ({ page, request }) => {
         // count=3 → foods cycle: chicken(0), rice(1), egg(2); egg is last
-        const data = await seedAndLogin(page, request, 3);
+        await seedAndLogin(page, request, 3);
         const lastCard = page.locator('details.meal-card').last();
         await lastCard.click();
-        await expect(lastCard.locator('.detail-item-qty').first()).toContainText('units');
+        // egg: qty=2, defaultWeight=50 → "2 units (100g)"
+        await expect(lastCard.locator('.detail-item-qty').first()).toContainText('2 units (100g)');
     });
 
     test('expanded card shows all four macro pills', async ({ page, request }) => {

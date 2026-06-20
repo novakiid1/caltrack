@@ -8,9 +8,9 @@ const mongod = await MongoMemoryServer.create();
 await mongoose.connect(mongod.getUri());
 
 const seededFoods = await foodModel.insertMany([
-    { name: 'chicken', unit: 'g',    calories: 2,   protein: 0.3,   fats: 0.05,  carbs: 0,    fibre: 0     },
-    { name: 'rice',    unit: 'g',    calories: 1.3, protein: 0.027, fats: 0.003, carbs: 0.28, fibre: 0.004 },
-    { name: 'egg',     unit: 'unit', calories: 1.5, protein: 0.12,  fats: 0.1,   carbs: 0.01, fibre: 0     },
+    { name: 'chicken', unit: 'g',    defaultWeight: null, calories: 2,   protein: 0.3,   fats: 0.05,  carbs: 0,    fibre: 0     },
+    { name: 'rice',    unit: 'g',    defaultWeight: null, calories: 1.3, protein: 0.027, fats: 0.003, carbs: 0.28, fibre: 0.004 },
+    { name: 'egg',     unit: 'unit', defaultWeight: 50,   calories: 1.5, protein: 0.12,  fats: 0.1,   carbs: 0.01, fibre: 0     },
 ]);
 
 // Test-only: creates a user with one day-doc containing N meals.
@@ -34,9 +34,11 @@ app.post('/test/seed', async (req, res) => {
     const meals = [];
     for (let i = 0; i < count; i++) {
         const food = seededFoods[i % seededFoods.length];
+        // use realistic quantities: unit items get count (e.g. 2 eggs), g/ml get 100
+        const qty = food.unit === 'unit' ? 2 : 100;
         meals.push({
             mealtype: mealtypes[i % mealtypes.length],
-            mealItems: [{ item: food._id, quantity: 100 }]
+            mealItems: [{ item: food._id, quantity: qty }]
         });
     }
 
@@ -45,15 +47,18 @@ app.post('/test/seed', async (req, res) => {
 
     const lastMeal = dayDoc.meals[dayDoc.meals.length - 1];
     const lastFood = seededFoods[(count - 1) % seededFoods.length];
+    const lastQty  = lastMeal.mealItems[0].quantity;
 
     res.json({
         email,
         password,
         count,
-        latestMealtype: lastMeal.mealtype,
-        latestCalories: Math.round(lastMeal.totals.calories),
-        latestFoodName: lastFood.name,
-        latestFoodUnit: lastFood.unit,
+        latestMealtype:       lastMeal.mealtype,
+        latestCalories:       Math.round(lastMeal.totals.calories),
+        latestFoodName:       lastFood.name,
+        latestFoodUnit:       lastFood.unit,
+        latestFoodDefaultWeight: lastFood.defaultWeight ?? null,
+        latestQty:            lastQty,
     });
 });
 

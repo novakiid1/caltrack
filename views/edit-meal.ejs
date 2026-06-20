@@ -179,8 +179,61 @@
             margin-top: 0.6rem;
         }
 
+        .btn-delete-meal {
+            width: 100%;
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            background: transparent;
+            border: 1px solid var(--danger);
+            border-radius: 8px;
+            color: var(--danger);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-delete-meal:hover { background: rgba(248, 113, 113, 0.08); }
+
         @media (max-width: 500px) {
             .item-row { grid-template-columns: 1fr 70px 30px auto; }
+        }
+
+        /* ── food autocomplete dropdown ── */
+        .food-dropdown {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+            overflow: hidden;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+
+        .food-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.55rem 0.9rem;
+            font-size: 0.875rem;
+            color: var(--text);
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .food-option:hover, .food-option.ac-focus {
+            background: var(--surface-2);
+        }
+
+        .food-option:hover .food-opt-name,
+        .food-option.ac-focus .food-opt-name { color: var(--primary); }
+
+        .food-option strong { color: var(--primary); font-weight: 700; }
+
+        .food-opt-unit {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-left: 0.5rem;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -212,10 +265,11 @@
                     <%# Render existing items as pre-filled editable rows %>
                     <% meal.mealItems.forEach(mi => { %>
                         <% const u = mi.item.unit || 'g'; %>
+                        <% const uLabel = (u === 'unit' && mi.item.defaultWeight) ? `unit · ${mi.item.defaultWeight}g ea` : u; %>
                         <div class="item-row">
                             <input type="text"   name="fooditem[]" value="<%= mi.item.name %>" required>
                             <input type="number" name="quantity[]" value="<%= mi.quantity %>" min="1" required>
-                            <span class="unit-tag"><%= u %></span>
+                            <span class="unit-tag"><%= uLabel %></span>
                             <button type="button" class="btn btn-danger" onclick="removeRow(this)" title="remove">✕</button>
                         </div>
                     <% }) %>
@@ -229,12 +283,104 @@
                 </div>
             </div>
         </form>
+
+        <form action="/meal/<%= meal._id %>/delete" method="post">
+            <button type="submit" class="btn-delete-meal" onclick="return confirm('Delete this entire <%= meal.mealtype || 'meal' %>?')">
+                delete meal
+            </button>
+        </form>
     </main>
 
     <script>
+        // ── Autocomplete ──────────────────────────────────────────────
+        let _dd = null, _ddInput = null, _ddItems = [], _ddIdx = -1;
+
+        function _acClose() {
+            if (_dd) { _dd.remove(); _dd = null; }
+            _ddInput = null; _ddItems = []; _ddIdx = -1;
+        }
+
+        function _acFocus(idx) {
+            const opts = _dd ? _dd.querySelectorAll('.food-option') : [];
+            opts.forEach(o => o.classList.remove('ac-focus'));
+            _ddIdx = Math.max(-1, Math.min(idx, opts.length - 1));
+            if (_ddIdx >= 0) opts[_ddIdx].classList.add('ac-focus');
+        }
+
+        function _acSelect(input, item) {
+            input.value = item.name;
+            // Update the unit-tag in the same row
+            const tag = input.closest('.item-row')?.querySelector('.unit-tag');
+            if (tag) {
+                tag.textContent = (item.unit === 'unit' && item.defaultWeight)
+                    ? `unit · ${item.defaultWeight}g ea`
+                    : (item.unit || 'g');
+            }
+            _acClose();
+        }
+
+        function _acShow(input, items) {
+            _acClose();
+            if (!items.length) return;
+            const rect = input.getBoundingClientRect();
+            const q    = input.value.trim();
+            const esc  = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+            _dd = document.createElement('div');
+            _dd.className = 'food-dropdown';
+            Object.assign(_dd.style, {
+                position: 'fixed',
+                top:      `${rect.bottom + 4}px`,
+                left:     `${rect.left}px`,
+                width:    `${Math.max(rect.width, 220)}px`,
+                zIndex:   '9999',
+            });
+
+            items.forEach((item, i) => {
+                const opt  = document.createElement('div');
+                opt.className = 'food-option';
+                const hl   = item.name.replace(new RegExp(`(${esc})`, 'gi'), '<strong>$1</strong>');
+                const unit = item.unit === 'unit' && item.defaultWeight
+                    ? `unit · ${item.defaultWeight}g ea` : (item.unit || 'g');
+                opt.innerHTML = `<span class="food-opt-name">${hl}</span><span class="food-opt-unit">${unit}</span>`;
+                opt.addEventListener('mousedown', e => { e.preventDefault(); _acSelect(input, item); });
+                opt.addEventListener('mouseenter', () => _acFocus(i));
+                _dd.appendChild(opt);
+            });
+
+            document.body.appendChild(_dd);
+            _ddInput = input; _ddItems = items; _ddIdx = -1;
+        }
+
+        function attachAutocomplete(input) {
+            let timer = null;
+            input.addEventListener('input', () => {
+                clearTimeout(timer);
+                const q = input.value.trim();
+                if (!q) { _acClose(); return; }
+                timer = setTimeout(async () => {
+                    try {
+                        const r = await fetch(`/api/foods?q=${encodeURIComponent(q)}`);
+                        _acShow(input, await r.json());
+                    } catch (_) {}
+                }, 220);
+            });
+            input.addEventListener('keydown', e => {
+                if (!_dd || _ddInput !== input) return;
+                if      (e.key === 'ArrowDown')             { e.preventDefault(); _acFocus(_ddIdx + 1); }
+                else if (e.key === 'ArrowUp')               { e.preventDefault(); _acFocus(_ddIdx - 1); }
+                else if (e.key === 'Enter' && _ddIdx >= 0)  { e.preventDefault(); _acSelect(input, _ddItems[_ddIdx]); }
+                else if (e.key === 'Escape')                { _acClose(); }
+            });
+            input.addEventListener('blur', () => setTimeout(_acClose, 150));
+        }
+
+        // Attach to all existing meal item inputs
+        document.querySelectorAll('input[name="fooditem[]"]').forEach(attachAutocomplete);
+        // ─────────────────────────────────────────────────────────────
+
         function removeRow(btn) {
             const container = document.getElementById('items');
-            // Keep at least one row
             if (container.querySelectorAll('.item-row').length > 1) {
                 btn.parentElement.remove();
             } else {
@@ -253,7 +399,9 @@
                 <button type="button" class="btn btn-danger" onclick="removeRow(this)" title="remove">✕</button>
             `;
             container.appendChild(row);
-            row.querySelector('input').focus();
+            const inp = row.querySelector('input[type="text"]');
+            attachAutocomplete(inp);
+            inp.focus();
         }
     </script>
 </body>

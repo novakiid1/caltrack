@@ -57,11 +57,13 @@ userMealSchema.pre("save", async function () {
         for (const mi of meal.mealItems) {
             const f = mi.item;
             const q = mi.quantity;
-            sum.calories += f.calories * q;
-            sum.protein  += f.protein  * q;
-            sum.fats     += f.fats     * q;
-            sum.carbs    += f.carbs    * q;
-            sum.fibre    += f.fibre    * q;
+            // for unit items, q = number of pieces; multiply by grams-per-piece to get actual weight
+            const w = (f.unit === 'unit' && f.defaultWeight) ? f.defaultWeight : 1;
+            sum.calories += f.calories * q * w;
+            sum.protein  += f.protein  * q * w;
+            sum.fats     += f.fats     * q * w;
+            sum.carbs    += f.carbs    * q * w;
+            sum.fibre    += f.fibre    * q * w;
         }
         meal.totals = sum;
         daily.calories += sum.calories;

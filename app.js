@@ -118,6 +118,38 @@ app.post("/home", isLoggedIn, hasGoals, async (req, res) => {
     res.redirect("/home");
 })
 
+app.get('/api/foods', isLoggedIn, async (req, res) => {
+    const q = (req.query.q || '').trim();
+    if (!q) return res.json([]);
+    const pattern = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    const items = await foodModel
+        .find({ name: pattern })
+        .select('name unit defaultWeight')
+        .limit(10)
+        .lean();
+    res.json(items);
+})
+
+app.get("/history", isLoggedIn, hasGoals, async (req, res) => {
+    const user = await userModel.findById(req.session.userId).select("name goals");
+
+    const docs = await userMealModel
+        .find({ user: req.session.userId })
+        .select('date dailyTotals')
+        .sort({ date: 1 });
+
+    const history = docs.map(d => ({
+        date:     d.date.toISOString().slice(0, 10),
+        calories: Math.round(d.dailyTotals.calories),
+        protein:  Math.round(d.dailyTotals.protein  * 10) / 10,
+        fats:     Math.round(d.dailyTotals.fats     * 10) / 10,
+        carbs:    Math.round(d.dailyTotals.carbs    * 10) / 10,
+        fibre:    Math.round(d.dailyTotals.fibre    * 10) / 10,
+    }));
+
+    res.render('history.ejs', { user, history, goals: user.goals });
+})
+
 app.get("/meal/:mealId", isLoggedIn, hasGoals, async (req, res) => {
     const dayDoc = await userMealModel
         .findOne({ user: req.session.userId, 'meals._id': req.params.mealId })
@@ -125,6 +157,37 @@ app.get("/meal/:mealId", isLoggedIn, hasGoals, async (req, res) => {
     if (!dayDoc) return res.redirect('/home');
     const meal = dayDoc.meals.id(req.params.mealId);
     res.render('edit-meal.ejs', { meal });
+})
+
+app.post("/meal/:mealId/delete", isLoggedIn, hasGoals, async (req, res) => {
+    const dayDoc = await userMealModel.findOne({
+        user: req.session.userId,
+        'meals._id': req.params.mealId
+    });
+    if (!dayDoc) return res.redirect('/home');
+    dayDoc.meals.pull({ _id: req.params.mealId });
+    await dayDoc.save();
+    res.redirect('/home');
+})
+
+app.post("/meal/:mealId/item/:foodId/delete", isLoggedIn, hasGoals, async (req, res) => {
+    const dayDoc = await userMealModel.findOne({
+        user: req.session.userId,
+        'meals._id': req.params.mealId
+    });
+    if (!dayDoc) return res.redirect('/home');
+    const meal = dayDoc.meals.id(req.params.mealId);
+    if (!meal) return res.redirect('/home');
+
+    meal.mealItems = meal.mealItems.filter(
+        mi => mi.item.toString() !== req.params.foodId
+    );
+    // last item removed → delete the whole meal
+    if (meal.mealItems.length === 0) {
+        dayDoc.meals.pull({ _id: req.params.mealId });
+    }
+    await dayDoc.save();
+    res.redirect('/home');
 })
 
 app.post("/meal/:mealId", isLoggedIn, hasGoals, async (req, res) => {
