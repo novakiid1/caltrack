@@ -1,0 +1,94 @@
+<% layout('layouts/app') %>
+<% locals.title = 'CalTrack — Settings' %>
+
+<% block('headerRight').append('<a href="/home" class="back-btn">← back</a>') %>
+
+<% block('head').append(`
+<style>
+    main { max-width: 520px; }
+
+    .page-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.35rem; }
+    .page-sub   { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 2rem; }
+
+    .divider {
+        font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.1em; color: var(--text-muted); margin: 1.5rem 0 1rem;
+    }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .field { display: flex; flex-direction: column; gap: 0.35rem; }
+
+    .input-wrap { position: relative; }
+    .input-wrap input {
+        padding: 0.7rem 2.5rem 0.7rem 0.9rem;
+        -moz-appearance: textfield;
+    }
+    .input-wrap input::-webkit-outer-spin-button,
+    .input-wrap input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .unit {
+        position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
+        font-size: 0.78rem; color: var(--text-muted); pointer-events: none;
+    }
+
+    @media (max-width: 400px) { .grid { grid-template-columns: 1fr; } }
+</style>
+`) %>
+
+<main>
+    <div class="page-title">settings</div>
+    <div class="page-sub">update your daily calorie and macro goals</div>
+
+    <form action="/settings" method="post">
+        <div class="form-card">
+            <div class="divider">calorie goal</div>
+            <div class="field">
+                <label for="calories">daily calories</label>
+                <div class="input-wrap">
+                    <input type="number" name="calories" id="calories" placeholder="2000"
+                           value="<%= user.goals?.calories || '' %>" required>
+                    <span class="unit">kcal</span>
+                </div>
+            </div>
+
+            <div class="divider">macro goals</div>
+            <div class="grid">
+                <div class="field">
+                    <label for="protein">protein</label>
+                    <div class="input-wrap">
+                        <input type="number" name="protein" id="protein" placeholder="150"
+                               value="<%= user.goals?.protein || '' %>" required>
+                        <span class="unit">g</span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="carbs">carbs</label>
+                    <div class="input-wrap">
+                        <input type="number" name="carbs" id="carbs" placeholder="250"
+                               value="<%= user.goals?.carbs || '' %>" required>
+                        <span class="unit">g</span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="fats">fats</label>
+                    <div class="input-wrap">
+                        <input type="number" name="fats" id="fats" placeholder="65"
+                               value="<%= user.goals?.fats || '' %>" required>
+                        <span class="unit">g</span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="fibre">fibre</label>
+                    <div class="input-wrap">
+                        <input type="number" name="fibre" id="fibre" placeholder="30"
+                               value="<%= user.goals?.fibre || '' %>" required>
+                        <span class="unit">g</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions" style="margin-top: 1.75rem;">
+                <button type="submit" class="btn btn-primary btn-submit">save goals</button>
+            </div>
+        </div>
+    </form>
+</main>

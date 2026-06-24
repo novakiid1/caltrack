@@ -77,7 +77,7 @@ describe('Home routes', () => {
             expect(dayDoc).toBeTruthy();
             expect(dayDoc.meals).toHaveLength(1);
             expect(dayDoc.meals[0].mealtype).toBe('dinner');
-            expect(dayDoc.meals[0].totals.calories).toBeCloseTo(200); // 2 * 100
+            expect(dayDoc.meals[0].totals.calories).toBeCloseTo(200); // 200/100 * 100g
         });
 
         it('appends subsequent meals to the same day document', async () => {
@@ -99,7 +99,7 @@ describe('Home routes', () => {
                 .send({ 'fooditem[]': 'rice', 'quantity[]': '100', mealtype: 'lunch' });
 
             const dayDoc = await userMealModel.findOne({});
-            // chicken: 2*100=200, rice: 1.3*100=130 → daily: 330
+            // chicken: 200/100*100=200, rice: 130/100*100=130 → daily: 330
             expect(dayDoc.dailyTotals.calories).toBeCloseTo(330);
         });
 
@@ -125,11 +125,12 @@ describe('Home routes', () => {
             expect(res.text).toContain('no meals logged today');
         });
 
-        it('returns 500 for unknown food item', async () => {
+        it('shows error for unknown food item', async () => {
             const agent = await createAuthedAgent();
             const res = await agent.post('/home').type('form')
                 .send({ 'fooditem[]': 'xyz_unknown', 'quantity[]': '100', mealtype: 'snack' });
-            expect(res.status).toBe(500);
+            expect(res.status).toBe(200);
+            expect(res.text).toContain('food not found: xyz_unknown');
         });
 
         it('redirects to /login if unauthenticated', async () => {

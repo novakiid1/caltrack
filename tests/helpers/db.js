@@ -23,7 +23,7 @@ export async function clearDB() {
 
 export async function seedFoodItems() {
     await foodModel.insertMany([
-        { name: 'chicken', unit: 'g',    calories: 2,   protein: 0.3,   fats: 0.05,  carbs: 0,    fibre: 0     },
-        { name: 'rice',    unit: 'g',    calories: 1.3, protein: 0.027, fats: 0.003, carbs: 0.28, fibre: 0.004 },
+        { name: 'chicken', unit: 'g',    calories: 200,  protein: 30,   fats: 5,    carbs: 0,    fibre: 0    },
+        { name: 'rice',    unit: 'g',    calories: 130,  protein: 2.7,  fats: 0.3,  carbs: 28,   fibre: 0.4  },
     ]);
 }

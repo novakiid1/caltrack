@@ -1,408 +1,211 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CalTrack — Edit Meal</title>
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<% layout('layouts/app') %>
+<% locals.title = 'CalTrack — Edit Meal' %>
 
-        :root {
-            --bg: #0f172a;
-            --surface: #1e293b;
-            --surface-2: #273549;
-            --primary: #22c55e;
-            --primary-hover: #16a34a;
-            --primary-dim: rgba(34, 197, 94, 0.1);
-            --text: #f1f5f9;
-            --text-muted: #94a3b8;
-            --border: #334155;
-            --danger: #f87171;
-            --radius: 14px;
-        }
+<% block('headerRight').append('<a href="/home" class="back-btn">← back</a>') %>
 
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            min-height: 100vh;
-        }
+<% block('head').append(`
+<style>
+    main { max-width: 580px; }
 
-        header {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 0 1.5rem;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
+    .page-header { margin-bottom: 1.75rem; }
+    .page-title  { font-size: 1.3rem; font-weight: 700; display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.3rem; }
+    .page-sub    { font-size: 0.85rem; color: var(--text-muted); }
 
-        .logo { font-size: 1.25rem; font-weight: 700; color: var(--primary); }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
 
-        .back-btn {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            padding: 0.4rem 0.9rem;
-            border-radius: 8px;
-            text-decoration: none;
-            transition: border-color 0.2s, color 0.2s;
-        }
+    .item-row { grid-template-columns: 1fr 90px 36px auto; }
 
-        .back-btn:hover { border-color: var(--text-muted); color: var(--text); }
+    .unit-tag { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-align: center; }
 
-        main { max-width: 580px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.6rem; }
 
-        .page-header { margin-bottom: 1.75rem; }
+    .btn-delete-meal {
+        width: 100%; margin-top: 0.75rem; padding: 0.75rem;
+        font-size: 0.9rem; font-weight: 600;
+        background: transparent; border: 1px solid var(--danger);
+        border-radius: 8px; color: var(--danger);
+        cursor: pointer; transition: background 0.15s;
+    }
+    .btn-delete-meal:hover { background: rgba(248, 113, 113, 0.08); }
 
-        .page-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            margin-bottom: 0.3rem;
-        }
+    /* ── food autocomplete dropdown ── */
+    .food-dropdown {
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+        overflow: hidden; max-height: 260px; overflow-y: auto;
+    }
+    .food-option {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0.55rem 0.9rem; font-size: 0.875rem;
+        color: var(--text); cursor: pointer; transition: background 0.1s;
+    }
+    .food-option:hover, .food-option.ac-focus { background: var(--surface-2); }
+    .food-option:hover .food-opt-name,
+    .food-option.ac-focus .food-opt-name { color: var(--primary); }
+    .food-option strong { color: var(--primary); font-weight: 700; }
+    .food-opt-unit { font-size: 0.72rem; color: var(--text-muted); margin-left: 0.5rem; white-space: nowrap; }
 
-        .mealtype-pill {
-            background: var(--primary-dim);
-            color: var(--primary);
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 0.2rem 0.65rem;
-            border-radius: 999px;
-            text-transform: capitalize;
-        }
+    @media (max-width: 500px) {
+        .item-row { grid-template-columns: 1fr 70px 30px auto; }
+    }
+</style>
+`) %>
 
-        .page-sub { font-size: 0.85rem; color: var(--text-muted); }
+<main>
+    <div class="page-header">
+        <div class="page-title">
+            edit meal
+            <span class="mealtype-pill"><%= meal.mealtype || 'meal' %></span>
+        </div>
+        <div class="page-sub">
+            <%= new Date(meal.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) %>
+            &nbsp;·&nbsp;
+            <%= Math.round(meal.totals.calories) %> kcal
+        </div>
+    </div>
 
-        .section-label {
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-muted);
-            margin-bottom: 0.65rem;
-        }
+    <form action="/meal/<%= meal._id %>" method="post">
+        <div class="form-card">
+            <div class="section-label">meal items</div>
+            <p class="hint" style="margin-bottom:0.9rem">Edit quantities, remove rows, or add new items below.</p>
 
-        .form-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 1.25rem 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .divider {
-            border: none;
-            border-top: 1px solid var(--border);
-            margin: 1rem 0;
-        }
-
-        .item-row {
-            display: grid;
-            grid-template-columns: 1fr 90px 36px auto;
-            gap: 0.5rem;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .unit-tag {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            font-weight: 600;
-            text-align: center;
-        }
-
-        input[type="text"], input[type="number"] {
-            background: var(--surface-2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 0.9rem;
-            padding: 0.65rem 0.9rem;
-            outline: none;
-            width: 100%;
-            transition: border-color 0.2s;
-        }
-
-        input:focus { border-color: var(--primary); }
-        input::placeholder { color: var(--text-muted); }
-
-        .btn {
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: 600;
-            padding: 0.65rem 1rem;
-            transition: background 0.2s, transform 0.1s;
-            white-space: nowrap;
-        }
-
-        .btn:active { transform: scale(0.97); }
-
-        .btn-primary { background: var(--primary); color: #0f172a; }
-        .btn-primary:hover { background: var(--primary-hover); }
-
-        .btn-ghost {
-            background: var(--surface-2);
-            color: var(--text-muted);
-            border: 1px solid var(--border);
-        }
-        .btn-ghost:hover { color: var(--text); border-color: var(--text-muted); }
-
-        .btn-danger {
-            background: transparent;
-            color: var(--danger);
-            border: 1px solid transparent;
-            padding: 0.65rem 0.6rem;
-        }
-        .btn-danger:hover { border-color: var(--danger); }
-
-        .form-actions {
-            display: flex;
-            gap: 0.75rem;
-            margin-top: 1.25rem;
-        }
-
-        .btn-submit { flex: 1; padding: 0.75rem; font-size: 0.95rem; }
-
-        .hint {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 0.6rem;
-        }
-
-        .btn-delete-meal {
-            width: 100%;
-            margin-top: 0.75rem;
-            padding: 0.75rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            background: transparent;
-            border: 1px solid var(--danger);
-            border-radius: 8px;
-            color: var(--danger);
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-        .btn-delete-meal:hover { background: rgba(248, 113, 113, 0.08); }
-
-        @media (max-width: 500px) {
-            .item-row { grid-template-columns: 1fr 70px 30px auto; }
-        }
-
-        /* ── food autocomplete dropdown ── */
-        .food-dropdown {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            box-shadow: 0 8px 28px rgba(0,0,0,0.5);
-            overflow: hidden;
-            max-height: 260px;
-            overflow-y: auto;
-        }
-
-        .food-option {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.55rem 0.9rem;
-            font-size: 0.875rem;
-            color: var(--text);
-            cursor: pointer;
-            transition: background 0.1s;
-        }
-
-        .food-option:hover, .food-option.ac-focus {
-            background: var(--surface-2);
-        }
-
-        .food-option:hover .food-opt-name,
-        .food-option.ac-focus .food-opt-name { color: var(--primary); }
-
-        .food-option strong { color: var(--primary); font-weight: 700; }
-
-        .food-opt-unit {
-            font-size: 0.72rem;
-            color: var(--text-muted);
-            margin-left: 0.5rem;
-            white-space: nowrap;
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <span class="logo">CalTrack</span>
-        <a href="/home" class="back-btn">← back</a>
-    </header>
-
-    <main>
-        <div class="page-header">
-            <div class="page-title">
-                edit meal
-                <span class="mealtype-pill"><%= meal.mealtype || 'meal' %></span>
+            <div id="items">
+                <% meal.mealItems.forEach(mi => { %>
+                    <% const u = mi.item.unit || 'g'; %>
+                    <% const uLabel = (u === 'unit' && mi.item.defaultWeight) ? `unit · ${mi.item.defaultWeight}g ea` : u; %>
+                    <div class="item-row">
+                        <input type="text"   name="fooditem[]" value="<%= mi.item.name %>" required>
+                        <input type="number" name="quantity[]" value="<%= mi.quantity %>" min="1" required>
+                        <span class="unit-tag"><%= uLabel %></span>
+                        <button type="button" class="btn btn-danger" onclick="removeRow(this)" title="remove">✕</button>
+                    </div>
+                <% }) %>
             </div>
-            <div class="page-sub">
-                <%= new Date(meal.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) %>
-                &nbsp;·&nbsp;
-                <%= Math.round(meal.totals.calories) %> kcal
+
+            <hr class="divider">
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-ghost" onclick="addRow()">+ add item</button>
+                <button type="submit" class="btn btn-primary btn-submit">save changes</button>
             </div>
         </div>
+    </form>
 
-        <form action="/meal/<%= meal._id %>" method="post">
-            <div class="form-card">
-                <div class="section-label">meal items</div>
-                <p class="hint" style="margin-bottom:0.9rem">Edit quantities, remove rows, or add new items below.</p>
+    <form action="/meal/<%= meal._id %>/delete" method="post">
+        <button type="submit" class="btn-delete-meal" onclick="return confirm('Delete this entire <%= meal.mealtype || 'meal' %>?')">
+            delete meal
+        </button>
+    </form>
+</main>
 
-                <div id="items">
-                    <%# Render existing items as pre-filled editable rows %>
-                    <% meal.mealItems.forEach(mi => { %>
-                        <% const u = mi.item.unit || 'g'; %>
-                        <% const uLabel = (u === 'unit' && mi.item.defaultWeight) ? `unit · ${mi.item.defaultWeight}g ea` : u; %>
-                        <div class="item-row">
-                            <input type="text"   name="fooditem[]" value="<%= mi.item.name %>" required>
-                            <input type="number" name="quantity[]" value="<%= mi.quantity %>" min="1" required>
-                            <span class="unit-tag"><%= uLabel %></span>
-                            <button type="button" class="btn btn-danger" onclick="removeRow(this)" title="remove">✕</button>
-                        </div>
-                    <% }) %>
-                </div>
+<script>
+    // ── Autocomplete ──────────────────────────────────────────────
+    let _dd = null, _ddInput = null, _ddItems = [], _ddIdx = -1;
 
-                <hr class="divider">
+    function _acClose() {
+        if (_dd) { _dd.remove(); _dd = null; }
+        _ddInput = null; _ddItems = []; _ddIdx = -1;
+    }
 
-                <div class="form-actions">
-                    <button type="button" class="btn btn-ghost" onclick="addRow()">+ add item</button>
-                    <button type="submit" class="btn btn-primary btn-submit">save changes</button>
-                </div>
-            </div>
-        </form>
+    function _acFocus(idx) {
+        const opts = _dd ? _dd.querySelectorAll('.food-option') : [];
+        opts.forEach(o => o.classList.remove('ac-focus'));
+        _ddIdx = Math.max(-1, Math.min(idx, opts.length - 1));
+        if (_ddIdx >= 0) opts[_ddIdx].classList.add('ac-focus');
+    }
 
-        <form action="/meal/<%= meal._id %>/delete" method="post">
-            <button type="submit" class="btn-delete-meal" onclick="return confirm('Delete this entire <%= meal.mealtype || 'meal' %>?')">
-                delete meal
-            </button>
-        </form>
-    </main>
-
-    <script>
-        // ── Autocomplete ──────────────────────────────────────────────
-        let _dd = null, _ddInput = null, _ddItems = [], _ddIdx = -1;
-
-        function _acClose() {
-            if (_dd) { _dd.remove(); _dd = null; }
-            _ddInput = null; _ddItems = []; _ddIdx = -1;
+    function _acSelect(input, item) {
+        input.value = item.name;
+        const tag = input.closest('.item-row')?.querySelector('.unit-tag');
+        if (tag) {
+            tag.textContent = (item.unit === 'unit' && item.defaultWeight)
+                ? `unit · ${item.defaultWeight}g ea`
+                : (item.unit || 'g');
         }
+        _acClose();
+    }
 
-        function _acFocus(idx) {
-            const opts = _dd ? _dd.querySelectorAll('.food-option') : [];
-            opts.forEach(o => o.classList.remove('ac-focus'));
-            _ddIdx = Math.max(-1, Math.min(idx, opts.length - 1));
-            if (_ddIdx >= 0) opts[_ddIdx].classList.add('ac-focus');
+    function _acShow(input, items) {
+        _acClose();
+        if (!items.length) return;
+        const rect = input.getBoundingClientRect();
+        const q    = input.value.trim();
+        const esc  = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        _dd = document.createElement('div');
+        _dd.className = 'food-dropdown';
+        Object.assign(_dd.style, {
+            position: 'fixed',
+            top:      `${rect.bottom + 4}px`,
+            left:     `${rect.left}px`,
+            width:    `${Math.max(rect.width, 220)}px`,
+            zIndex:   '9999',
+        });
+
+        items.forEach((item, i) => {
+            const opt  = document.createElement('div');
+            opt.className = 'food-option';
+            const hl   = item.name.replace(new RegExp(`(${esc})`, 'gi'), '<strong>$1</strong>');
+            const unit = item.unit === 'unit' && item.defaultWeight
+                ? `unit · ${item.defaultWeight}g ea` : (item.unit || 'g');
+            opt.innerHTML = `<span class="food-opt-name">${hl}</span><span class="food-opt-unit">${unit}</span>`;
+            opt.addEventListener('mousedown', e => { e.preventDefault(); _acSelect(input, item); });
+            opt.addEventListener('mouseenter', () => _acFocus(i));
+            _dd.appendChild(opt);
+        });
+
+        document.body.appendChild(_dd);
+        _ddInput = input; _ddItems = items; _ddIdx = -1;
+    }
+
+    function attachAutocomplete(input) {
+        let timer = null;
+        input.addEventListener('input', () => {
+            clearTimeout(timer);
+            const q = input.value.trim();
+            if (!q) { _acClose(); return; }
+            timer = setTimeout(async () => {
+                try {
+                    const r = await fetch(`/api/foods?q=${encodeURIComponent(q)}`);
+                    _acShow(input, await r.json());
+                } catch (_) {}
+            }, 220);
+        });
+        input.addEventListener('keydown', e => {
+            if (!_dd || _ddInput !== input) return;
+            if      (e.key === 'ArrowDown')            { e.preventDefault(); _acFocus(_ddIdx + 1); }
+            else if (e.key === 'ArrowUp')              { e.preventDefault(); _acFocus(_ddIdx - 1); }
+            else if (e.key === 'Enter' && _ddIdx >= 0) { e.preventDefault(); _acSelect(input, _ddItems[_ddIdx]); }
+            else if (e.key === 'Escape')               { _acClose(); }
+        });
+        input.addEventListener('blur', () => setTimeout(_acClose, 150));
+    }
+
+    document.querySelectorAll('input[name="fooditem[]"]').forEach(attachAutocomplete);
+    // ─────────────────────────────────────────────────────────────
+
+    function removeRow(btn) {
+        const container = document.getElementById('items');
+        if (container.querySelectorAll('.item-row').length > 1) {
+            btn.parentElement.remove();
+        } else {
+            btn.parentElement.querySelectorAll('input').forEach(i => i.value = '');
         }
+    }
 
-        function _acSelect(input, item) {
-            input.value = item.name;
-            // Update the unit-tag in the same row
-            const tag = input.closest('.item-row')?.querySelector('.unit-tag');
-            if (tag) {
-                tag.textContent = (item.unit === 'unit' && item.defaultWeight)
-                    ? `unit · ${item.defaultWeight}g ea`
-                    : (item.unit || 'g');
-            }
-            _acClose();
-        }
-
-        function _acShow(input, items) {
-            _acClose();
-            if (!items.length) return;
-            const rect = input.getBoundingClientRect();
-            const q    = input.value.trim();
-            const esc  = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-            _dd = document.createElement('div');
-            _dd.className = 'food-dropdown';
-            Object.assign(_dd.style, {
-                position: 'fixed',
-                top:      `${rect.bottom + 4}px`,
-                left:     `${rect.left}px`,
-                width:    `${Math.max(rect.width, 220)}px`,
-                zIndex:   '9999',
-            });
-
-            items.forEach((item, i) => {
-                const opt  = document.createElement('div');
-                opt.className = 'food-option';
-                const hl   = item.name.replace(new RegExp(`(${esc})`, 'gi'), '<strong>$1</strong>');
-                const unit = item.unit === 'unit' && item.defaultWeight
-                    ? `unit · ${item.defaultWeight}g ea` : (item.unit || 'g');
-                opt.innerHTML = `<span class="food-opt-name">${hl}</span><span class="food-opt-unit">${unit}</span>`;
-                opt.addEventListener('mousedown', e => { e.preventDefault(); _acSelect(input, item); });
-                opt.addEventListener('mouseenter', () => _acFocus(i));
-                _dd.appendChild(opt);
-            });
-
-            document.body.appendChild(_dd);
-            _ddInput = input; _ddItems = items; _ddIdx = -1;
-        }
-
-        function attachAutocomplete(input) {
-            let timer = null;
-            input.addEventListener('input', () => {
-                clearTimeout(timer);
-                const q = input.value.trim();
-                if (!q) { _acClose(); return; }
-                timer = setTimeout(async () => {
-                    try {
-                        const r = await fetch(`/api/foods?q=${encodeURIComponent(q)}`);
-                        _acShow(input, await r.json());
-                    } catch (_) {}
-                }, 220);
-            });
-            input.addEventListener('keydown', e => {
-                if (!_dd || _ddInput !== input) return;
-                if      (e.key === 'ArrowDown')             { e.preventDefault(); _acFocus(_ddIdx + 1); }
-                else if (e.key === 'ArrowUp')               { e.preventDefault(); _acFocus(_ddIdx - 1); }
-                else if (e.key === 'Enter' && _ddIdx >= 0)  { e.preventDefault(); _acSelect(input, _ddItems[_ddIdx]); }
-                else if (e.key === 'Escape')                { _acClose(); }
-            });
-            input.addEventListener('blur', () => setTimeout(_acClose, 150));
-        }
-
-        // Attach to all existing meal item inputs
-        document.querySelectorAll('input[name="fooditem[]"]').forEach(attachAutocomplete);
-        // ─────────────────────────────────────────────────────────────
-
-        function removeRow(btn) {
-            const container = document.getElementById('items');
-            if (container.querySelectorAll('.item-row').length > 1) {
-                btn.parentElement.remove();
-            } else {
-                btn.parentElement.querySelectorAll('input').forEach(i => i.value = '');
-            }
-        }
-
-        function addRow() {
-            const container = document.getElementById('items');
-            const row = document.createElement('div');
-            row.className = 'item-row';
-            row.innerHTML = `
-                <input type="text"   name="fooditem[]" placeholder="food item">
-                <input type="number" name="quantity[]" placeholder="qty" min="1">
-                <span class="unit-tag" style="color:var(--text-muted)">g</span>
-                <button type="button" class="btn btn-danger" onclick="removeRow(this)" title="remove">✕</button>
-            `;
-            container.appendChild(row);
-            const inp = row.querySelector('input[type="text"]');
-            attachAutocomplete(inp);
-            inp.focus();
-        }
-    </script>
-</body>
-</html>
+    function addRow() {
+        const container = document.getElementById('items');
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.innerHTML = `
+            <input type="text"   name="fooditem[]" placeholder="food item">
+            <input type="number" name="quantity[]" placeholder="qty" min="1">
+            <span class="unit-tag" style="color:var(--text-muted)">g</span>
+            <button type="button" class="btn btn-danger" onclick="removeRow(this)" title="remove">✕</button>
+        `;
+        container.appendChild(row);
+        const inp = row.querySelector('input[type="text"]');
+        attachAutocomplete(inp);
+        inp.focus();
+    }
+</script>

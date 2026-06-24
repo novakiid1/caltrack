@@ -25,9 +25,9 @@ describe('UserMeal pre-save hook', () => {
         });
         await dayDoc.save();
 
-        expect(dayDoc.meals[0].totals.calories).toBeCloseTo(200);   // 2 * 100
-        expect(dayDoc.meals[0].totals.protein).toBeCloseTo(30);     // 0.3 * 100
-        expect(dayDoc.meals[0].totals.fats).toBeCloseTo(5);         // 0.05 * 100
+        expect(dayDoc.meals[0].totals.calories).toBeCloseTo(200);   // 200/100 * 100g
+        expect(dayDoc.meals[0].totals.protein).toBeCloseTo(30);     // 30/100 * 100g
+        expect(dayDoc.meals[0].totals.fats).toBeCloseTo(5);         // 5/100 * 100g
         expect(dayDoc.meals[0].totals.carbs).toBeCloseTo(0);
     });
 
@@ -46,7 +46,7 @@ describe('UserMeal pre-save hook', () => {
         });
         await dayDoc.save();
 
-        // breakfast: 2*100=200, lunch: 1.3*200=260 → daily: 460
+        // breakfast: 200/100*100=200, lunch: 130/100*200=260 → daily: 460
         expect(dayDoc.dailyTotals.calories).toBeCloseTo(460);
         // Each meal's own totals are also calculated
         expect(dayDoc.meals[0].totals.calories).toBeCloseTo(200);
@@ -68,7 +68,7 @@ describe('UserMeal pre-save hook', () => {
 
         dayDoc.meals.push({ mealtype: 'lunch', mealItems: [{ item: rice._id, quantity: 100 }] });
         await dayDoc.save();
-        // 200 + 1.3*100 = 330
+        // 200 + 130/100*100 = 330
         expect(dayDoc.dailyTotals.calories).toBeCloseTo(330);
     });
 

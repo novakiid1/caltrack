@@ -1,9 +1,13 @@
 import express from 'express';
 import session from 'express-session';
+import ejsMate from 'ejs-mate';
 import foodModel from './models/fooditems.js';
 import { userModel, userMealModel } from './models/users.js';
 
 const app = express();
+app.engine('ejs', ejsMate);
+app.set('view engine', 'ejs');
+app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
     secret: process.env.SESSION_SECRET || 'caltrack-secret',
@@ -77,6 +81,25 @@ app.post("/setup", isLoggedIn, async (req, res) => {
     res.redirect("/home");
 })
 
+app.get("/settings", isLoggedIn, hasGoals, async (req, res) => {
+    const user = await userModel.findById(req.session.userId).select("name goals");
+    res.render("settings.ejs", { user });
+})
+
+app.post("/settings", isLoggedIn, hasGoals, async (req, res) => {
+    const { calories, protein, fats, carbs, fibre } = req.body;
+    await userModel.findByIdAndUpdate(req.session.userId, {
+        goals: {
+            calories: Number(calories),
+            protein:  Number(protein),
+            fats:     Number(fats),
+            carbs:    Number(carbs),
+            fibre:    Number(fibre)
+        }
+    });
+    res.redirect("/home");
+})
+
 app.get("/home", isLoggedIn, hasGoals, async (req, res) => {
     const user = await userModel.findById(req.session.userId).select("name goals");
 
@@ -87,22 +110,37 @@ app.get("/home", isLoggedIn, hasGoals, async (req, res) => {
         .findOne({ user: req.session.userId, date: today })
         .populate("meals.mealItems.item");
 
-    res.render("home.ejs", { user, dayDoc });
+    res.render("home.ejs", { user, dayDoc, error: null });
 })
 
 app.post("/home", isLoggedIn, hasGoals, async (req, res) => {
     let { fooditem, quantity, mealtype } = req.body;
 
-    const fooditems = [].concat(fooditem);
+    const fooditems = [].concat(fooditem).map(n => n.trim()).filter(Boolean);
     const quantities = [].concat(quantity);
 
+    if (!fooditems.length) {
+        const user   = await userModel.findById(req.session.userId).select("name goals");
+        const today  = new Date(); today.setHours(0, 0, 0, 0);
+        const dayDoc = await userMealModel.findOne({ user: req.session.userId, date: today }).populate("meals.mealItems.item");
+        return res.render("home.ejs", { user, dayDoc, error: "add at least one food item" });
+    }
+
+    const notFound = [];
     const mealItems = await Promise.all(
         fooditems.map(async (name, i) => {
-            const doc = await foodModel.findOne({ name: name.trim() }).select("_id");
-            if (!doc) throw new Error(`Food item "${name}" not found in DB`);
-            return { item: doc._id, quantity: Number(quantities[i]) };
+            const doc = await foodModel.findOne({ name: new RegExp(`^${name}$`, 'i') }).select("_id");
+            if (!doc) { notFound.push(name); return null; }
+            return { item: doc._id, quantity: Number(quantities[i]) || 1 };
         })
     );
+
+    if (notFound.length) {
+        const user   = await userModel.findById(req.session.userId).select("name goals");
+        const today  = new Date(); today.setHours(0, 0, 0, 0);
+        const dayDoc = await userMealModel.findOne({ user: req.session.userId, date: today }).populate("meals.mealItems.item");
+        return res.render("home.ejs", { user, dayDoc, error: `food not found: ${notFound.join(', ')}` });
+    }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
