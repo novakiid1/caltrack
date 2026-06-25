@@ -3,6 +3,7 @@ import session from 'express-session';
 import ejsMate from 'ejs-mate';
 import foodModel from './models/fooditems.js';
 import { userModel, userMealModel } from './models/users.js';
+// import { startMissedMealCron } from './cron/missedMealCheck.js';
 
 const app = express();
 app.engine('ejs', ejsMate);
@@ -260,5 +261,9 @@ app.post("/meal/:mealId", isLoggedIn, hasGoals, async (req, res) => {
 
     res.redirect('/home');
 })
+
+if (process.env.NODE_ENV !== 'test') {
+    startMissedMealCron();
+}
 
 export default app;
