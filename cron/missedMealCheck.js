@@ -4,10 +4,12 @@ import { userModel, userMealModel } from '../models/users.js';
 import MissedMealAlert from '../models/missedMealAlert.js';
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
+        user: "cookedkid06@gmail.com",
+        pass: "vbiz dikh pzvm zxjy",
     }
 });
 
@@ -41,12 +43,8 @@ export async function findUsersWhoMissedMeals(date) {
 // mailer param allows injecting a mock in tests.
 // Returns { sent: true } or { sent: false, reason: 'duplicate' | 'error', message? }
 export async function sendMissedMealEmail(user, date, mailer = transporter) {
-    try {
-        await MissedMealAlert.create({ user: user._id, date });
-    } catch (e) {
-        if (e.code === 11000) return { sent: false, reason: 'duplicate' };
-        return { sent: false, reason: 'error', message: e.message };
-    }
+    const existing = await MissedMealAlert.findOne({ user: user._id, date });
+    if (existing) return { sent: false, reason: 'duplicate' };
 
     const dateStr = date.toLocaleDateString('en-IN', {
         weekday: 'long', month: 'long', day: 'numeric'
@@ -68,11 +66,13 @@ export async function sendMissedMealEmail(user, date, mailer = transporter) {
                 </div>
             `
         });
-        return { sent: true };
     } catch (e) {
         console.error(`Gmail SMTP failed for ${user.email}:`, e.message);
         return { sent: false, reason: 'error', message: e.message };
     }
+
+    await MissedMealAlert.create({ user: user._id, date });
+    return { sent: true };
 }
 
 // ── 4. Orchestrator ───────────────────────────────────────────────
