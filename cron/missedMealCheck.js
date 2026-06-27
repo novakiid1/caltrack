@@ -1,15 +1,15 @@
 import cron from 'node-cron';
 import nodemailer from 'nodemailer';
-import { userModel, userMealModel } from '../models/users.js';
 import MissedMealAlert from '../models/missedMealAlert.js';
+import { userMealModel, userModel } from '../models/users.js';
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
     secure: true,
     auth: {
-        user: "cookedkid06@gmail.com",
-        pass: "vbiz dikh pzvm zxjy",
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
     }
 });
 
@@ -35,7 +35,7 @@ export async function findUsersWhoMissedMeals(date) {
         const dayDoc = await userMealModel.findOne({ user: user._id, date });
         if (!dayDoc?.meals?.length) missed.push(user);
     }
-    
+
     return missed;
 }
 
@@ -52,11 +52,11 @@ export async function sendMissedMealEmail(user, date, mailer = transporter) {
 
     try {
         await mailer.sendMail({
-            from:    `"CalTrack" <${process.env.GMAIL_USER}>`,
-            to:      user.email,
+            from: `"CalTrack" <${process.env.GMAIL_USER}>`,
+            to: user.email,
             subject: `CalTrack — you missed logging meals on ${dateStr}`,
-            text:    `Hey ${user.name},\n\nYou didn't log any meals on ${dateStr}. Stay consistent!\n\nOpen CalTrack to log today's meals.\n\n— CalTrack`,
-            html:    `
+            text: `Hey ${user.name},\n\nYou didn't log any meals on ${dateStr}. Stay consistent!\n\nOpen CalTrack to log today's meals.\n\n— CalTrack`,
+            html: `
                 <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#0f172a;color:#f1f5f9;border-radius:12px">
                     <h2 style="color:#22c55e;margin-top:0">CalTrack</h2>
                     <p>Hey <strong>${user.name}</strong>,</p>
@@ -78,7 +78,7 @@ export async function sendMissedMealEmail(user, date, mailer = transporter) {
 // ── 4. Orchestrator ───────────────────────────────────────────────
 export async function checkMissedMeals() {
     const yesterday = getDateWindow(-1);
-    const users     = await findUsersWhoMissedMeals(yesterday);
+    const users = await findUsersWhoMissedMeals(yesterday);
     for (const user of users) {
         await sendMissedMealEmail(user, yesterday);
     }
