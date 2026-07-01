@@ -5,7 +5,7 @@ import { userMealModel } from '../../models/users.js';
 import { setupDB, teardownDB, clearDB, seedFoodItems } from '../helpers/db.js';
 
 async function createAuthedAgent() {
-    const agent = request.agent(app);
+    const agent = request.agent(app); //agent is something that manages state between reqs stores cookies 
     await agent.post('/register').type('form').send({ name: 'Test', email: 't@t.com', password: 'pw' });
     await agent.post('/setup').type('form').send({ calories: 2000, protein: 150, carbs: 250, fats: 65, fibre: 30 });
     return agent;

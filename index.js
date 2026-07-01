@@ -1,3 +1,4 @@
+import session from 'express-session';
 import mongoose from 'mongoose';
 import app from './app.js';
 
@@ -15,3 +16,16 @@ main().then(() => {
 }).catch((err) => {
     console.log(err);
 });
+
+
+app.get("/", (req, res) => {
+    res.send("working root")
+})
+
+
+app.use(session({ secret: "supersecret" }));
+
+
+app.listen(8080, () => {
+    console.log('running ');
+})

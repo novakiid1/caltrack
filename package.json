@@ -10,7 +10,7 @@
     "test:watch": "vitest",
     "test:ui": "playwright test",
     "test:ui:headed": "playwright test --headed",
-    "console":"node console.js"
+    "console": "node console.js"
   },
   "keywords": [],
   "author": "",

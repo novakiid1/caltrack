@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import app from '../../app.js';
-import { setupDB, teardownDB, clearDB } from '../helpers/db.js';
+import { clearDB, setupDB, teardownDB } from '../helpers/db.js';
 
 describe('Auth routes', () => {
     beforeAll(setupDB);
@@ -26,14 +26,6 @@ describe('Auth routes', () => {
             expect(res.headers.location).toBe('/setup');
         });
 
-        it('sets a session cookie', async () => {
-            const res = await request(app)
-                .post('/register')
-                .type('form')
-                .send({ name: 'Test', email: 'test@test.com', password: 'pass123' });
-            expect(res.headers['set-cookie']).toBeDefined();
-        });
-
         it('rejects duplicate email', async () => {
             await request(app).post('/register').type('form').send({ name: 'A', email: 'dup@test.com', password: 'pw' });
             const res = await request(app)
@@ -42,6 +34,14 @@ describe('Auth routes', () => {
                 .send({ name: 'B', email: 'dup@test.com', password: 'pw' });
             expect(res.status).toBe(200);
             expect(res.text).toContain('email already in use');
+        });
+
+        it('sets a session cookie', async () => {
+            const res = await request(app)
+                .post('/register')
+                .type('form')
+                .send({ name: 'Test', email: 'test@test.com', password: 'pass123' });
+            expect(res.headers['set-cookie']).toBeDefined();
         });
     });
 

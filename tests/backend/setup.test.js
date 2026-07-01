@@ -30,7 +30,7 @@ describe('Setup routes', () => {
             const res = await agent.get('/setup');
             expect(res.text).toContain('Alice');
         });
-
+//seperate out the tests into setup goals and display saved goals
         it('pre-fills goals if already saved', async () => {
             const agent = request.agent(app);
             await agent.post('/register').type('form').send({ name: 'Test', email: 't@t.com', password: 'pw' });
