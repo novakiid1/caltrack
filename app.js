@@ -9,6 +9,7 @@ const app = express();
 app.engine('ejs', ejsMate);
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
     secret: process.env.SESSION_SECRET || 'caltrack-secret',
@@ -38,6 +39,9 @@ app.get("/login", (req, res) => {
 
 app.post("/login", async (req, res) => {
     const { email, password } = req.body;
+    if (!email?.trim() || !password?.trim()) {
+        return res.render("login.ejs", { error: "email and password are required" });
+    }
     const user = await userModel.findOne({ email, password });
     if (!user) return res.render("login.ejs", { error: "invalid email or password" });
     req.session.userId = user._id;

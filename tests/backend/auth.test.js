@@ -84,6 +84,42 @@ describe('Auth routes', () => {
             expect(res.status).toBe(200);
             expect(res.text).toContain('invalid email or password');
         });
+
+        it('empty email returns validation error', async () => {
+            const res = await request(app)
+                .post('/login')
+                .type('form')
+                .send({ email: '', password: 'pw' });
+            expect(res.status).toBe(200);
+            expect(res.text).toContain('email and password are required');
+        });
+
+        it('empty password returns validation error', async () => {
+            const res = await request(app)
+                .post('/login')
+                .type('form')
+                .send({ email: 'u@t.com', password: '' });
+            expect(res.status).toBe(200);
+            expect(res.text).toContain('email and password are required');
+        });
+
+        it('whitespace-only email returns validation error', async () => {
+            const res = await request(app)
+                .post('/login')
+                .type('form')
+                .send({ email: '   ', password: 'pw' });
+            expect(res.status).toBe(200);
+            expect(res.text).toContain('email and password are required');
+        });
+
+        it('missing email and password fields returns validation error', async () => {
+            const res = await request(app)
+                .post('/login')
+                .type('form')
+                .send({});
+            expect(res.status).toBe(200);
+            expect(res.text).toContain('email and password are required');
+        });
     });
 
     describe('GET /logout', () => {

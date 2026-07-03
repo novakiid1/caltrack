@@ -1,4 +1,4 @@
-import session from 'express-session';
+import 'dotenv/config';
 import mongoose from 'mongoose';
 import app from './app.js';
 
@@ -10,22 +10,9 @@ async function main() {
 
 main().then(() => {
     console.log("connected to db");
-    app.listen(8080, () => {
+    app.listen(process.env.PORT || 8080, () => {
         console.log("the server is running on port 8080");
     });
 }).catch((err) => {
     console.log(err);
 });
-
-
-app.get("/", (req, res) => {
-    res.send("working root")
-})
-
-
-app.use(session({ secret: "supersecret" }));
-
-
-app.listen(8080, () => {
-    console.log('running ');
-})
