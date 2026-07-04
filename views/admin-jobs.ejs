@@ -1,0 +1,70 @@
+<% layout('layouts/app') %>
+<% locals.title = 'CalTrack — Admin Jobs' %>
+
+<% block('headerRight').append('<a href="/home" class="back-btn">← back</a>') %>
+
+<% block('head').append(`
+<style>
+    main { max-width: 640px; }
+    .page-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.35rem; }
+    .page-sub   { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 2rem; }
+    .job-card { margin-bottom: 1.5rem; }
+    .job-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .job-label { font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .job-value { font-size: 0.95rem; font-weight: 600; }
+    .result-box { background: rgba(255,255,255,0.03); border-radius: 8px; padding: 0.9rem 1rem; font-size: 0.85rem; margin-top: 1rem; line-height: 1.6; }
+    .result-row { display: flex; justify-content: space-between; }
+    .badge { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; margin-bottom: 0.6rem; }
+    .badge-ok  { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .badge-err { background: rgba(239,68,68,0.15); color: #ef4444; }
+</style>
+`) %>
+
+<main>
+    <div class="page-title">background jobs</div>
+    <div class="page-sub">manually trigger and inspect scheduled jobs</div>
+
+    <div class="form-card job-card">
+        <div class="job-row">
+            <span class="job-label">job</span>
+            <span class="job-value">missed-meal reminder</span>
+        </div>
+        <div class="job-row">
+            <span class="job-label">schedule</span>
+            <span class="job-value">daily at midnight IST</span>
+        </div>
+
+        <form action="/admin/jobs/missed-meal/run" method="post">
+            <div class="form-actions" style="margin-top: 1rem;">
+                <button type="submit" class="btn btn-primary btn-submit">run now</button>
+            </div>
+        </form>
+
+        <% if (lastRun) { %>
+            <div class="result-box">
+                <% if (lastRun.error) { %>
+                    <span class="badge badge-err">error</span><br>
+                    ran at <%= lastRun.ranAt.toLocaleString() %><br>
+                    <%= lastRun.error %>
+                <% } else { %>
+                    <span class="badge badge-ok">done</span><br>
+                    <div class="result-row"><span>ran at</span><span><%= lastRun.ranAt.toLocaleString() %></span></div>
+                    <div class="result-row"><span>checked date</span><span><%= lastRun.result.date.toDateString() %></span></div>
+                    <div class="result-row"><span>users who missed meals</span><span><%= lastRun.result.usersChecked %></span></div>
+                    <div class="result-row"><span>emails sent</span><span><%= lastRun.result.sent %></span></div>
+                    <div class="result-row"><span>skipped (already alerted)</span><span><%= lastRun.result.skipped %></span></div>
+                    <div class="result-row"><span>errors</span><span><%= lastRun.result.errors.length %></span></div>
+                    <% if (lastRun.result.errors.length) { %>
+                        <div style="margin-top:0.5rem; color:#ef4444;">
+                            <% lastRun.result.errors.forEach(e => { %>
+                                <%= e.email %>: <%= e.message %><br>
+                            <% }) %>
+                        </div>
+                    <% } %>
+                <% } %>
+            </div>
+        <% } else { %>
+            <div class="result-box">not run yet this session</div>
+        <% } %>
+    </div>
+</main>

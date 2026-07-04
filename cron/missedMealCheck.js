@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import nodemailer from 'nodemailer';
 import MissedMealAlert from '../models/missedMealAlert.js';
 import { userMealModel, userModel } from '../models/users.js';
+import logger from '../utils/logger.js';
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
@@ -67,25 +68,54 @@ export async function sendMissedMealEmail(user, date, mailer = transporter) {
             `
         });
     } catch (e) {
-        console.error(`Gmail SMTP failed for ${user.email}:`, e.message);
+        logger.error({ userId: user._id, email: user.email, err: e.message }, 'missed-meal email send failed');
         return { sent: false, reason: 'error', message: e.message };
     }
 
     await MissedMealAlert.create({ user: user._id, date });
+    logger.info({ userId: user._id, email: user.email }, 'missed-meal email sent');
     return { sent: true };
 }
 
 // ── 4. Orchestrator ───────────────────────────────────────────────
 export async function checkMissedMeals() {
+    const startedAt = Date.now();
     const yesterday = getDateWindow(-1);
+    logger.info({ windowDate: yesterday.toISOString() }, 'missed-meal check started');
+
     const users = await findUsersWhoMissedMeals(yesterday);
+
+    const summary = { date: yesterday, usersChecked: users.length, sent: 0, skipped: 0, errors: [] };
     for (const user of users) {
-        await sendMissedMealEmail(user, yesterday);
+        const result = await sendMissedMealEmail(user, yesterday);
+        if (result.sent) summary.sent++;
+        else if (result.reason === 'duplicate') summary.skipped++;
+        else summary.errors.push({ email: user.email, message: result.message });
     }
+
+    logger.info({
+        ...summary,
+        errors: summary.errors.length,
+        durationMs: Date.now() - startedAt,
+    }, 'missed-meal check finished');
+
+    return summary;
 }
 
 // ── 5. Cron starter ───────────────────────────────────────────────
 export function startMissedMealCron() {
-    cron.schedule('0 0 * * *', checkMissedMeals, { timezone: 'Asia/Kolkata' });
-    console.log('Missed meal cron scheduled (midnight IST)');
+    cron.schedule('0 0 * * *', () => {
+        logger.info({
+            firedAtUtc: new Date().toISOString(),
+            firedAtIst: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+        }, 'missed-meal cron fired');
+        checkMissedMeals();
+    }, { timezone: 'Asia/Kolkata' });
+
+    logger.info({
+        cronExpression: '0 0 * * *',
+        cronTimezone: 'Asia/Kolkata',
+        processTz: process.env.TZ || null,
+        resolvedSystemTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    }, 'missed-meal cron scheduled');
 }

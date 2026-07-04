@@ -3,7 +3,8 @@ import session from 'express-session';
 import ejsMate from 'ejs-mate';
 import foodModel from './models/fooditems.js';
 import { userModel, userMealModel } from './models/users.js';
-import { startMissedMealCron } from './cron/missedMealCheck.js';
+import { startMissedMealCron, checkMissedMeals } from './cron/missedMealCheck.js';
+import logger from './utils/logger.js';
 
 const app = express();
 app.engine('ejs', ejsMate);
@@ -28,6 +29,25 @@ const hasGoals = async (req, res, next) => {
     if (!user.goals?.calories) return res.redirect("/setup");
     next();
 };
+
+const requireAdmin = (req, res, next) => {
+    const expected = process.env.ADMIN_PASSWORD;
+    if (!expected) return res.status(503).send('Admin panel disabled: ADMIN_PASSWORD is not set');
+
+    const auth = req.headers.authorization || '';
+    const [scheme, encoded] = auth.split(' ');
+    const password = scheme === 'Basic' && encoded
+        ? Buffer.from(encoded, 'base64').toString().split(':')[1]
+        : null;
+
+    if (password !== expected) {
+        res.set('WWW-Authenticate', 'Basic realm="admin"');
+        return res.status(401).send('Authentication required');
+    }
+    next();
+};
+
+let lastMissedMealRun = null;
 
 app.get("/", (req, res) => {
     res.redirect("/home");
@@ -264,6 +284,22 @@ app.post("/meal/:mealId", isLoggedIn, hasGoals, async (req, res) => {
     await dayDoc.save();
 
     res.redirect('/home');
+})
+
+app.get("/admin/jobs", requireAdmin, (req, res) => {
+    res.render("admin-jobs.ejs", { lastRun: lastMissedMealRun });
+})
+
+app.post("/admin/jobs/missed-meal/run", requireAdmin, async (req, res) => {
+    logger.info({ ip: req.ip }, 'missed-meal manual run triggered via admin panel');
+    try {
+        const result = await checkMissedMeals();
+        lastMissedMealRun = { ranAt: new Date(), result, error: null };
+    } catch (e) {
+        logger.error({ err: e.message }, 'missed-meal manual run failed');
+        lastMissedMealRun = { ranAt: new Date(), result: null, error: e.message };
+    }
+    res.redirect("/admin/jobs");
 })
 
 if (process.env.NODE_ENV !== 'test') {
