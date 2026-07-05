@@ -27,7 +27,7 @@ Call log:
 
 ```yaml
 - banner:
-  - text: CalTrack Tuesday, Jun 30
+  - text: CalTrack Sunday, Jul 5
   - link "history":
     - /url: /history
   - link "settings":
@@ -36,7 +36,7 @@ Call log:
     - /url: /logout
 - main:
   - text: today's summary calories 2 / 2000 kcal protein 0.3g / 150g carbs 0g / 250g fats 0.1g / 65g fibre 0g / 30g today's meals
-  - group: dinner 08:45 PM 2 kcal ▼
+  - group: dinner 11:47 AM 2 kcal ▼
   - text: add meal breakfast lunch snack dinner
   - textbox "food item"
   - spinbutton

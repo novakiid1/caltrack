@@ -43,7 +43,7 @@ Call log:
   - banner [ref=e2]:
     - generic [ref=e3]: CalTrack
     - generic [ref=e4]:
-      - generic [ref=e5]: Tuesday, Jun 30
+      - generic [ref=e5]: Sunday, Jul 5
       - link "history" [ref=e6] [cursor=pointer]:
         - /url: /history
       - link "settings" [ref=e7] [cursor=pointer]:
@@ -71,10 +71,10 @@ Call log:
           - generic [ref=e29]: 0g / 30g
     - generic [ref=e30]: today's meals
     - group [ref=e32]:
-      - generic "breakfast 08:45 PM 2 kcal ▼" [ref=e33] [cursor=pointer]:
+      - generic "breakfast 11:47 AM 2 kcal ▼" [ref=e33] [cursor=pointer]:
         - generic [ref=e34]:
           - generic [ref=e35]: breakfast
-          - generic [ref=e36]: 08:45 PM
+          - generic [ref=e36]: 11:47 AM
         - generic [ref=e37]:
           - generic [ref=e38]: 2 kcal
           - generic [ref=e39]: ▼
@@ -92,7 +92,7 @@ Call log:
           - generic [ref=e52]: g
         - generic [ref=e53]:
           - textbox "food item" [ref=e54]: rice
-          - spinbutton [active] [ref=e55]: "79"
+          - spinbutton [active] [ref=e55]: "80"
           - generic [ref=e56]: g
           - button "✕" [ref=e57] [cursor=pointer]
       - generic [ref=e58]:
