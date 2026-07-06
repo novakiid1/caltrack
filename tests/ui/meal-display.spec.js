@@ -77,7 +77,7 @@ test.describe('Meal display (mocked DB)', () => {
         await page.click('button:has-text("+ add item")');
         await page.locator('[name="fooditem[]"]').last().fill('rice');
         await page.locator('[name="quantity[]"]').last().fill('80');
-        await page.click('[type="submit"]');
+        await page.click('.btn-submit');
         await page.waitForURL('/home');
 
         // Newest meal (2 items) is last in chronological order

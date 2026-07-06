@@ -1,11 +1,24 @@
-import { checkMissedMeals } from '../cron/missedMealCheck.js';
+import { checkMissedMeals, findUsersWhoMissedMeals, getDateWindow } from '../cron/missedMealCheck.js';
+import MissedMealAlert from '../models/missedMealAlert.js';
 import logger from '../utils/logger.js';
 
 let lastMissedMealRun = null;
 
-export function getJobs(req, res) {
+export async function getJobs(req, res) {
     try {
-        res.render("admin-jobs.ejs", { lastRun: lastMissedMealRun });
+        const missedDate = getDateWindow(-1);
+        const missedMeals = await findUsersWhoMissedMeals(missedDate);
+
+        const alerts = await MissedMealAlert.find({
+            date: missedDate,
+            user: { $in: missedMeals.map(u => u._id) }
+        }).select('user');
+        const alertedIds = new Set(alerts.map(a => a.user.toString()));
+
+        // only show users who missed meals AND haven't already been emailed for this date
+        const missedUsers = missedMeals.filter(u => !alertedIds.has(u._id.toString()));
+
+        res.render("admin-jobs.ejs", { lastRun: lastMissedMealRun, missedUsers, missedDate });
     } catch (e) {
         logger.error({ err: e.message }, 'failed to render admin jobs page');
         res.status(500).send('Failed to load admin page');

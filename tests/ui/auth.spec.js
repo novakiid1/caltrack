@@ -30,7 +30,7 @@ test.describe('Authentication', () => {
         await page.goto('/register');
         await page.fill('[name="name"]', 'B'); await page.fill('[name="email"]', email); await page.fill('[name="password"]', 'pw');
         await page.click('[type="submit"]');
-        await expect(page.locator('.error')).toContainText('email already in use');
+        await expect(page.locator('.error-msg')).toContainText('email already in use');
     });
 
     test('login page renders correctly', async ({ page }) => {
@@ -44,7 +44,7 @@ test.describe('Authentication', () => {
         await page.fill('[name="email"]', 'nobody@test.com');
         await page.fill('[name="password"]', 'wrong');
         await page.click('[type="submit"]');
-        await expect(page.locator('.error')).toBeVisible();
+        await expect(page.locator('.error-msg')).toBeVisible();
     });
 
     test('logout redirects to /login', async ({ page }) => {

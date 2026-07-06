@@ -78,7 +78,7 @@ test.describe('Home page', () => {
         await page.fill('[name="quantity[]"]', '100');
         await page.click('[type="submit"]');
         await page.waitForURL('/home');
-        await expect(page.locator('.meal-name').first()).toContainText('dinner');
+        await expect(page.locator('.mealtype-pill').first()).toContainText('dinner');
     });
 
     test('unauthenticated /home redirects to /login', async ({ page }) => {

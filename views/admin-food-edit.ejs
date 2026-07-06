@@ -1,0 +1,79 @@
+<% layout('layouts/app') %>
+<% locals.title = 'CalTrack — Edit Food Item' %>
+
+<% block('headerRight').append('<a href="/admin/foods" class="back-btn">← back</a>') %>
+
+<% block('head').append(`
+<style>
+    main { max-width: 520px; }
+    .page-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.35rem; }
+    .page-sub   { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 2rem; }
+    .divider { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin: 1.25rem 0 1rem; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .field { display: flex; flex-direction: column; gap: 0.35rem; }
+    @media (max-width: 400px) { .grid { grid-template-columns: 1fr; } }
+</style>
+`) %>
+
+<main>
+    <div class="page-title">edit food item</div>
+    <div class="page-sub"><%= food.name %></div>
+
+    <form action="/admin/foods/<%= food._id %>" method="post">
+        <div class="form-card">
+            <div class="field">
+                <label for="name">name</label>
+                <input type="text" name="name" id="name" value="<%= food.name %>" required>
+            </div>
+
+            <div class="field" style="margin-top: 0.75rem">
+                <label for="category">category</label>
+                <input type="text" name="category" id="category" value="<%= food.category || '' %>">
+            </div>
+
+            <div class="grid" style="margin-top: 0.75rem">
+                <div class="field">
+                    <label for="unit">unit</label>
+                    <select name="unit" id="unit">
+                        <option value="g"    <%= food.unit === 'g'    ? 'selected' : '' %>>g</option>
+                        <option value="ml"   <%= food.unit === 'ml'   ? 'selected' : '' %>>ml</option>
+                        <option value="unit" <%= food.unit === 'unit' ? 'selected' : '' %>>unit</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="defaultWeight">grams per unit</label>
+                    <input type="number" step="any" name="defaultWeight" id="defaultWeight"
+                           value="<%= food.defaultWeight ?? '' %>" placeholder="only for unit-based items">
+                </div>
+            </div>
+
+            <div class="divider">macros (per 100<%= food.unit === 'ml' ? 'ml' : 'g' %>)</div>
+            <div class="grid">
+                <div class="field">
+                    <label for="calories">calories</label>
+                    <input type="number" step="any" name="calories" id="calories" value="<%= food.calories %>" required>
+                </div>
+                <div class="field">
+                    <label for="protein">protein</label>
+                    <input type="number" step="any" name="protein" id="protein" value="<%= food.protein %>" required>
+                </div>
+                <div class="field">
+                    <label for="carbs">carbs</label>
+                    <input type="number" step="any" name="carbs" id="carbs" value="<%= food.carbs %>" required>
+                </div>
+                <div class="field">
+                    <label for="fats">fats</label>
+                    <input type="number" step="any" name="fats" id="fats" value="<%= food.fats %>" required>
+                </div>
+                <div class="field">
+                    <label for="fibre">fibre</label>
+                    <input type="number" step="any" name="fibre" id="fibre" value="<%= food.fibre %>" required>
+                </div>
+            </div>
+
+            <div class="form-actions" style="margin-top: 1.75rem;">
+                <button type="submit" class="btn btn-primary btn-submit">save changes</button>
+            </div>
+        </div>
+    </form>
+</main>
