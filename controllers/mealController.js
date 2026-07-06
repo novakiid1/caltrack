@@ -56,7 +56,7 @@ export async function updateMeal(req, res) {
         pairs.map(async ({ name, qty }) => {
             const doc = await foodModel.findOne({ name }).select('_id');
             if (!doc) throw new Error(`Food item "${name}" not found in DB`);
-            return { item: doc._id, quantity: qty };
+            return { item: doc._id, quantity: qty > 0 ? qty : 1 };
         })
     );
 

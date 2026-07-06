@@ -273,7 +273,7 @@
             <div id="items">
                 <div class="item-row">
                     <input type="text"   name="fooditem[]" placeholder="food item">
-                    <input type="number" name="quantity[]" placeholder="qty">
+                    <input type="number" name="quantity[]" placeholder="qty" min="1">
                     <span class="unit-tag">g</span>
                 </div>
             </div>
@@ -378,7 +378,7 @@
         row.className = 'item-row';
         row.innerHTML = `
             <input type="text"   name="fooditem[]" placeholder="food item">
-            <input type="number" name="quantity[]" placeholder="qty">
+            <input type="number" name="quantity[]" placeholder="qty" min="1">
             <span class="unit-tag">g</span>
             <button type="button" class="btn btn-danger" onclick="this.parentElement.remove()">✕</button>
         `;

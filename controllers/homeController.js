@@ -36,7 +36,8 @@ export async function postHome(req, res) {
         fooditems.map(async (name, i) => {
             const doc = await foodModel.findOne({ name: new RegExp(`^${name}$`, 'i') }).select("_id");
             if (!doc) { notFound.push(name); return null; }
-            return { item: doc._id, quantity: Number(quantities[i]) || 1 };
+            const qty = Number(quantities[i]);
+            return { item: doc._id, quantity: qty > 0 ? qty : 1 };
         })
     );
 

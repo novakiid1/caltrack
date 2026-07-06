@@ -4,7 +4,12 @@ import logger from '../utils/logger.js';
 let lastMissedMealRun = null;
 
 export function getJobs(req, res) {
-    res.render("admin-jobs.ejs", { lastRun: lastMissedMealRun });
+    try {
+        res.render("admin-jobs.ejs", { lastRun: lastMissedMealRun });
+    } catch (e) {
+        logger.error({ err: e.message }, 'failed to render admin jobs page');
+        res.status(500).send('Failed to load admin page');
+    }
 }
 
 export async function runMissedMealJob(req, res) {
